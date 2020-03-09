@@ -1,5 +1,5 @@
 let Lorena = require('../src/index')
-const lorena = new Lorena( '5c7ca0ef4248e3a5-b987eb7a015b24d8-42dd5715a308829e' )
+const lorena = new Lorena( '5c7ca0ef4248e3a5-b987eb7a015b24d8-d81519de41ebdbba' )
 
 const main = async () => {
     await lorena.connect()
