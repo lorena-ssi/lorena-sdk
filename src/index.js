@@ -75,63 +75,36 @@ class Lorena {
     return (result.events)
   }
 
-  async sendText (payload) {
-    await this.matrix.sendMessage(this.roomId, 'm.text', payload)
-  }
-
-  async sendAction (recipe, recipeId, payload) {
+  async sendAction (recipe, remoteRecipe, remoteRecipeId, payload) {
     const sendPayload = JSON.stringify({
       recipe: recipe,
       recipeId: 0,
-      remoteRecipe: 'ping',
-      remoteRecipeId: recipeId,
+      remoteRecipe: remoteRecipe,
+      remoteRecipeId: remoteRecipeId,
       payload: payload
     })
     await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
     return this.recipeId
-  }
-
-  async getMessage () {
-    // await this.matrix.sendMessage(this.roomId, 'm.text', payload)
-  }
-
-  async sendMessage (recipe, payload) {
-    const body = JSON.stringify({
-      recipe: recipe,
-      recipeId: 0,
-      remoteRecipe: recipe,
-      // remoteRecipeId: store.state.txnId,
-      payload: payload
-    })
-    await this.matrix.sendMessage(this.roomId, 'm.action', body)
-  }    
-
-  waitAnswer (recipeId) {
-    // EventSource
   }
 }
 
 
 let lorena = new Lorena()
 process.on("message", async (msg) => {
-    switch (msg.action) {
-        case 'connect':
-            await lorena.connect(msg.connectionString)
-            process.send('ready')
-            while (true) {
-              let events = await lorena.getMessages()
-              events.forEach(element => {
-                let parsedElement = JSON.parse(element.payload.body)
-                // console.log(element)
-                process.send(parsedElement)
-              })
-          }
-        break
-        case 'm.action':
-            await lorena.sendAction(msg.recipe, msg.recipeId, {})
-            process.send('New recipe = '+msg.recipeId)
-        break
-    }
-    
-    
-  })
+  switch (msg.action) {
+    case 'connect':
+      await lorena.connect(msg.connectionString)
+      process.send('ready')
+      while (true) {
+        let events = await lorena.getMessages()
+        events.forEach(element => {
+          let parsedElement = JSON.parse(element.payload.body)
+          process.send(parsedElement)
+        })
+      }
+      break
+    case 'm.action':
+        await lorena.sendAction (msg.recipe, msg.remoteRecipe, msg.remoteRecipeId, msg.payload) 
+      break
+  }
+})

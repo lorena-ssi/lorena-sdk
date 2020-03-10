@@ -1,5 +1,4 @@
 const { fork } = require("child_process")
-let recipeId = 1
 
 const main = async () => {
     const lorena = fork("src/index.js")
@@ -7,12 +6,26 @@ const main = async () => {
     lorena.on("message", msg => {
         switch (msg) {
             case 'ready':
-                lorena.send({action: 'm.action', recipe:'contact-list', recipeId})
+                lorena.send({
+                    action: 'm.action',
+                    recipe: 'contact-list',             // Local name for your process
+                    remoteRecipeId: 1,                  // Local id  for your process
+                    remoteRecipe:'get-contact-list',    // Recipe we are calling to
+                    payload: {}
+                    })
             break
+            case 'error':
+                // TODO: Send errors.
+                process.exit()
             default:
-                if (msg.recipeId === recipeId) {
-                    console.log(msg.payload)
+                switch( msg.recipe ) {
+                    case 'get-contact-list':
+                        if (msg.recipeId === 1) {
+                            console.log(msg.payload)
+                        }
+                    break
                 }
+                
             break
         }
     })
