@@ -75,12 +75,12 @@ class Lorena {
     return (result.events)
   }
 
-  async sendAction (recipe, remoteRecipe, remoteRecipeId, payload) {
+  async sendAction (recipe, recipeId, threadRef, threadId, payload) {
     const sendPayload = JSON.stringify({
       recipe: recipe,
-      recipeId: 0,
-      remoteRecipe: remoteRecipe,
-      remoteRecipeId: remoteRecipeId,
+      recipeId: recipeId,
+      threadRef: threadRef,
+      threadId: threadId,
       payload: payload
     })
     await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
@@ -96,15 +96,19 @@ process.on("message", async (msg) => {
       await lorena.connect(msg.connectionString)
       process.send('ready')
       while (true) {
+        console.log('.... getMasseages');
+        
         let events = await lorena.getMessages()
         events.forEach(element => {
+          console.log('........ msg');
           let parsedElement = JSON.parse(element.payload.body)
           process.send(parsedElement)
         })
       }
       break
     case 'm.action':
-        await lorena.sendAction (msg.recipe, msg.remoteRecipe, msg.remoteRecipeId, msg.payload) 
+      console.log("\n+++++++++++++++++++++ SEND")
+        await lorena.sendAction (msg.recipe, msg.recipeId, msg.threadRef, msg.threadId, msg.payload) 
       break
   }
 })
