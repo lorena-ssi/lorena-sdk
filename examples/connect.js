@@ -15,17 +15,17 @@ const main = async () => {
     */
 
     // test hello
-    /*
-    await lorena.sendAction('ping', {})
+    
+    await lorena.sendAction('contact-list', {})
     msgs = await lorena.getMessages()
     console.log(msgs[0])
-    */
+    
 
     // let ret = JSON.parse(msgs[0].payload.body)
     
     // console.log('ACTION Ping....'+ret.payload)
 
-    await lorena.sendAction('contact-add', {did: '42dd5715a308829e', matrix:'@42dd5715a308829e:matrix.caelumlabs.com'})
+    // await lorena.sendAction('contact-add', {did: '42dd5715a308829e', matrix:'@42dd5715a308829e:matrix.caelumlabs.com'})
 }
 
 main()

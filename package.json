@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@lorena-ssi/zenroom-lib": "^1.3.2",
-    "@lorena-ssi/matrix-lib": "^1.0.5",
+    "@lorena-ssi/matrix-lib": "^1.0.6",
     "axios": "^0.19.2",
     "chalk": "^3.0.0",
     "chalk-pipe": "^3.0.0",
