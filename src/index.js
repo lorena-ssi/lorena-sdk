@@ -46,7 +46,7 @@ class Lorena extends EventEmitter {
     return true
   }
 
-  // Conneect to Lorena IDSpace.
+  // Connect to Lorena IDSpace.
   async connect (clientCode) {
     // We need three parameters : matrixUser, matrixPass & DID
     const client = clientCode.split('-')
@@ -57,8 +57,8 @@ class Lorena extends EventEmitter {
       logger.key('Login matrix user', this.matrixUser)
       try {
         await this.matrix.connect(this.matrixUser, this.matrixPass)
-
-        // TODO: No neeed to store token in the database. Use in memory instead.
+        
+        // TODO: No need to store token in the database. Use in memory instead.
         const rooms = await this.matrix.joinedRooms()
         this.roomId = rooms[0]
         const events = await this.matrix.events('')
