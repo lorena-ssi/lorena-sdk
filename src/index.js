@@ -3,18 +3,12 @@ const Zen = require('@lorena-ssi/zenroom-lib')
 const Logger = require('./logger')
 const logger = new Logger()
 
-module.exports = class Lorena {
-  constructor (clientCode = '', serverPath = 'https://matrix.caelumlabs.com') {
-    const client = clientCode.split('-')
-    if (client.length === 3) {
-      this.matrixUser = client[0]
-      this.matrixPass = client[1]
-      this.did = client[2]
-    } else {
-      this.matrixUser = ''
-      this.matrixPass = ''
-      this.did = ''
-    }
+
+class Lorena {
+  constructor ( serverPath = 'https://matrix.caelumlabs.com') {
+    this.matrixUser = ''
+    this.matrixPass = ''
+    this.did = ''
     this.matrix = new Matrix(serverPath)
     this.zenroom = { z: new Zen() }
     this.roomId = ''
@@ -48,20 +42,27 @@ module.exports = class Lorena {
   }
 
   // Commect to Lorena IDSpace.
-  async connect () {
-    logger.key('Login matrix user', this.matrixUser)
-    try {
-      await this.matrix.connect(this.matrixUser, this.matrixPass)
-      // TODO: No neeed to store token in the database. Use in memory instead.
-      const rooms = await this.matrix.joinedRooms()
-      this.roomId = rooms[0]
-      const events = await this.matrix.events('')
-      this.nextBatch = events.nextBatch
-      return (true)
-    } catch (e) {
-      console.log(e)
-      return (new Error('Could not connect to Matrix'))
+  async connect (clientCode) {
+    // We need three parameters : matrixUser, matrixPass & DID
+    const client = clientCode.split('-')
+    if (client.length === 3) {
+      this.matrixUser = client[0]
+      this.matrixPass = client[1]
+      this.did = client[2]
+      logger.key('Login matrix user', this.matrixUser)
+      try {
+        await this.matrix.connect(this.matrixUser, this.matrixPass)
+        // TODO: No neeed to store token in the database. Use in memory instead.
+        const rooms = await this.matrix.joinedRooms()
+        this.roomId = rooms[0]
+        const events = await this.matrix.events('')
+        this.nextBatch = events.nextBatch
+        return (true)
+      } catch (e) {
+        console.log(e)
+      }
     }
+    return (new Error('Could not connect to Matrix'))
   }
 
   async getMessages () {
@@ -78,16 +79,16 @@ module.exports = class Lorena {
     await this.matrix.sendMessage(this.roomId, 'm.text', payload)
   }
 
-  async sendAction (recipe, payload) {
-    this.recipeId++
+  async sendAction (recipe, recipeId, payload) {
     const sendPayload = JSON.stringify({
       recipe: recipe,
       recipeId: 0,
       remoteRecipe: 'ping',
-      remoteRecipeId: this.recipeId,
+      remoteRecipeId: recipeId,
       payload: payload
     })
     await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
+    return this.recipeId
   }
 
   async getMessage () {
@@ -103,9 +104,34 @@ module.exports = class Lorena {
       payload: payload
     })
     await this.matrix.sendMessage(this.roomId, 'm.action', body)
-  }
+  }    
 
   waitAnswer (recipeId) {
     // EventSource
   }
 }
+
+
+let lorena = new Lorena()
+process.on("message", async (msg) => {
+    switch (msg.action) {
+        case 'connect':
+            await lorena.connect(msg.connectionString)
+            process.send('ready')
+            while (true) {
+              let events = await lorena.getMessages()
+              events.forEach(element => {
+                let parsedElement = JSON.parse(element.payload.body)
+                // console.log(element)
+                process.send(parsedElement)
+              })
+          }
+        break
+        case 'm.action':
+            await lorena.sendAction(msg.recipe, msg.recipeId, {})
+            process.send('New recipe = '+msg.recipeId)
+        break
+    }
+    
+    
+  })
