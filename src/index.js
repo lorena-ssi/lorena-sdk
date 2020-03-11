@@ -57,7 +57,7 @@ class Lorena extends EventEmitter {
       logger.key('Login matrix user', this.matrixUser)
       try {
         await this.matrix.connect(this.matrixUser, this.matrixPass)
-        
+
         // TODO: No need to store token in the database. Use in memory instead.
         const rooms = await this.matrix.joinedRooms()
         this.roomId = rooms[0]
