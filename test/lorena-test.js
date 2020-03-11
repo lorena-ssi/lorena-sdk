@@ -17,6 +17,7 @@ describe('Lorena API', function () {
   it('should contruct a Lorena class', async () => {
     lorena = new Lorena()
     expect(lorena).to.have.keys([
+
       'matrix',
       'zenroom',
       'roomId',
@@ -25,9 +26,12 @@ describe('Lorena API', function () {
       'matrixUser',
       'matrixPass',
       'did',
-      'on',
-      'off',
-      'emit',
+      // 'on',
+      // 'off',
+      // 'emit',
+      '_events',
+      '_eventsCount',
+      '_maxListeners',
       'processing',
       'queue',
       'ready'

@@ -2,7 +2,7 @@ const Matrix = require('@lorena-ssi/matrix-lib')
 const Zen = require('@lorena-ssi/zenroom-lib')
 const Logger = require('./logger')
 const logger = new Logger()
-const EventEmitter = require('./utils/EventEmitter')
+const { EventEmitter } = require('events')
 
 class Lorena extends EventEmitter {
   constructor (serverPath = 'https://matrix.caelumlabs.com') {

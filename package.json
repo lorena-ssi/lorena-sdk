@@ -1,6 +1,6 @@
 {
   "name": "@lorena-ssi/lorena-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Lorena Client",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "ISC",
@@ -20,12 +20,11 @@
   },
   "dependencies": {
     "@lorena-ssi/matrix-lib": "^1.0.7",
-    "@lorena-ssi/zenroom-lib": "^1.3.2",
+    "@lorena-ssi/zenroom-lib": "^1.3.3",
     "axios": "^0.19.2",
     "chalk": "^3.0.0",
     "chalk-pipe": "^3.0.0",
-    "inquirer": "^7.0.4",
-    "mitt": "^1.2.0"
+    "inquirer": "^7.0.4"
   },
   "directories": {
     "example": "examples"
