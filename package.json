@@ -10,7 +10,7 @@
     "coveralls": "nyc mocha test --timeout 20000 && nyc report --reporter=text-lcov | coveralls",
     "debug": "./pds 1",
     "lint": "eslint ./examples ./src ./test --fix",
-    "mocha": "mocha test --timeout 50000",
+    "mocha": "mocha test --timeout 50000 --bail",
     "test": "npm run mocha"
   },
   "husky": {
@@ -19,18 +19,21 @@
     }
   },
   "dependencies": {
-    "@lorena-ssi/zenroom-lib": "^1.3.2",
     "@lorena-ssi/matrix-lib": "^1.0.7",
+    "@lorena-ssi/zenroom-lib": "^1.3.2",
     "axios": "^0.19.2",
     "chalk": "^3.0.0",
     "chalk-pipe": "^3.0.0",
-    "inquirer": "^7.0.4"
+    "inquirer": "^7.0.4",
+    "mitt": "^1.2.0"
   },
   "directories": {
     "example": "examples"
   },
   "devDependencies": {
     "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "chai-spies": "^1.0.0",
     "coveralls": "^3.0.9",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",

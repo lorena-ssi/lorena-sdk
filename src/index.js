@@ -2,9 +2,11 @@ const Matrix = require('@lorena-ssi/matrix-lib')
 const Zen = require('@lorena-ssi/zenroom-lib')
 const Logger = require('./logger')
 const logger = new Logger()
+const EventEmitter = require('./utils/EventEmitter')
 
-class Lorena {
+class Lorena extends EventEmitter {
   constructor (serverPath = 'https://matrix.caelumlabs.com') {
+    super()
     this.matrixUser = ''
     this.matrixPass = ''
     this.did = ''
@@ -13,6 +15,9 @@ class Lorena {
     this.roomId = ''
     this.nextBatch = ''
     this.recipeId = 0
+    this.queue = []
+    this.processing = false
+    this.ready = false
   }
 
   // Create Matrix user and zenroom keypair
@@ -33,11 +38,12 @@ class Lorena {
       }
       const keyPair = await this.zenroom.z.newKeyPair(username)
       this.zenroom.keypair = keyPair[username].keypair
-    } catch (e) {
-      logger.log(e)
-      return (new Error('Could not create user'))
+    } catch (error) {
+      logger.log(error)
+      this.emit('error', error)
+      throw new Error('Could not create user')
     }
-    return (true)
+    return true
   }
 
   // Connect to Lorena IDSpace.
@@ -51,17 +57,35 @@ class Lorena {
       logger.key('Login matrix user', this.matrixUser)
       try {
         await this.matrix.connect(this.matrixUser, this.matrixPass)
+
         // TODO: No need to store token in the database. Use in memory instead.
         const rooms = await this.matrix.joinedRooms()
         this.roomId = rooms[0]
         const events = await this.matrix.events('')
         this.nextBatch = events.nextBatch
-        return (true)
-      } catch (e) {
-        console.log(e)
+        this.ready = true
+        this.emit('ready')
+        this.loop()
+        return true
+      } catch (error) {
+        logger.log(error)
+        this.emit('error', error)
+        throw error
       }
     }
-    return (new Error('Could not connect to Matrix'))
+  }
+
+  async loop () {
+    while (true) {
+      const events = await this.getMessages()
+      this.processQueue()
+
+      events.forEach(element => {
+        const parsedElement = JSON.parse(element.payload.body)
+        this.emit(`message:${parsedElement.remoteRecipe}`, parsedElement)
+        this.emit('message', parsedElement)
+      })
+    }
   }
 
   async getMessages () {
@@ -74,39 +98,33 @@ class Lorena {
     return (result.events)
   }
 
+  async processQueue () {
+    if (this.queue.length > 0) {
+      const sendPayload = JSON.stringify(this.queue.pop())
+      await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
+    }
+    if (this.queue.length === 0) {
+      this.processing = false
+    }
+  }
+
   async sendAction (recipe, recipeId, threadRef, threadId, payload) {
-    const sendPayload = JSON.stringify({
-      recipe: recipe,
-      recipeId: recipeId,
-      threadRef: threadRef,
-      threadId: threadId,
-      payload: payload
-    })
-    await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
+    const action = {
+      recipe,
+      recipeId,
+      threadRef,
+      threadId,
+      payload
+    }
+    if (!this.processing) { // execute just in time
+      this.processing = true
+      const sendPayload = JSON.stringify(action)
+      await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
+    } else {
+      this.queue.push(action)
+    }
     return this.recipeId
   }
 }
 
-const lorena = new Lorena()
-process.on('message', async (msg) => {
-  switch (msg.action) {
-    case 'connect':
-      await lorena.connect(msg.connectionString)
-      process.send('ready')
-      while (true) {
-        console.log('.... getMessages')
-
-        const events = await lorena.getMessages()
-        events.forEach(element => {
-          console.log('........ msg')
-          const parsedElement = JSON.parse(element.payload.body)
-          process.send(parsedElement)
-        })
-      }
-      break // eslint-disable-line no-unreachable
-    case 'm.action':
-      console.log('\n+++++++++++++++++++++ SEND')
-      await lorena.sendAction(msg.recipe, msg.recipeId, msg.threadRef, msg.threadId, msg.payload)
-      break
-  }
-})
+module.exports = Lorena
