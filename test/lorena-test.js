@@ -71,6 +71,9 @@ describe('Lorena API', function () {
       threadId: 2, // Local id  for your process
       payload: {}
     }
+    /**
+     *
+     */
     function pong () {
       expect(onpong).to.have.been.called()
       done()
