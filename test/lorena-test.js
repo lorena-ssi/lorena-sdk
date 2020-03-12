@@ -3,11 +3,30 @@ const chai = require('chai')
 const mocha = require('mocha')
 const describe = mocha.describe
 const it = mocha.it
+
+// Configure chai
 chai.use(require('chai-as-promised'))
 chai.use(require('chai-spies'))
-// Configure chai
-chai.should()
 const expect = chai.expect
+const assert = chai.assert
+
+const lorenaKeys = [
+  'matrix',
+  'zenroom',
+  'roomId',
+  'nextBatch',
+  'options',
+  'recipeId',
+  'matrixUser',
+  'matrixPass',
+  'did',
+  '_events',
+  '_eventsCount',
+  '_maxListeners',
+  'processing',
+  'queue',
+  'ready'
+]
 
 describe('Lorena API', function () {
   var lorena
@@ -16,74 +35,20 @@ describe('Lorena API', function () {
 
   it('should contruct a Lorena class with server', async () => {
     lorena = new Lorena('server')
-    expect(lorena).to.have.keys([
-
-      'matrix',
-      'zenroom',
-      'roomId',
-      'nextBatch',
-      'recipeId',
-      'matrixUser',
-      'matrixPass',
-      'did',
-      // 'on',
-      // 'off',
-      // 'emit',
-      '_events',
-      '_eventsCount',
-      '_maxListeners',
-      'processing',
-      'queue',
-      'ready'
-    ])
+    expect(lorena).to.have.keys(lorenaKeys)
+    assert(!lorena.options.debug)
   })
 
   it('should contruct a Lorena class without params', async () => {
     lorena = new Lorena()
-    expect(lorena).to.have.keys([
-
-      'matrix',
-      'zenroom',
-      'roomId',
-      'nextBatch',
-      'recipeId',
-      'matrixUser',
-      'matrixPass',
-      'did',
-      // 'on',
-      // 'off',
-      // 'emit',
-      '_events',
-      '_eventsCount',
-      '_maxListeners',
-      'processing',
-      'queue',
-      'ready'
-    ])
+    expect(lorena).to.have.keys(lorenaKeys)
+    assert(!lorena.options.debug)
   })
 
   it('should contruct a Lorena class with debug', async () => {
     lorena = new Lorena({ debug: true })
-    expect(lorena).to.have.keys([
-
-      'matrix',
-      'zenroom',
-      'roomId',
-      'nextBatch',
-      'recipeId',
-      'matrixUser',
-      'matrixPass',
-      'did',
-      // 'on',
-      // 'off',
-      // 'emit',
-      '_events',
-      '_eventsCount',
-      '_maxListeners',
-      'processing',
-      'queue',
-      'ready'
-    ])
+    expect(lorena).to.have.keys(lorenaKeys)
+    assert(lorena.options.debug)
   })
 
   it('should create a new Lorena user', async () => {
@@ -98,18 +63,21 @@ describe('Lorena API', function () {
     }
   })
 
-  let ready
-  it('should connect', (done) => {
-    ready = chai.spy()
+  it('should connect', () => {
+    const ready = chai.spy()
     lorena.on('ready', ready)
 
-    lorena.connect('efd708e2b5dc1648-77326e5151d48bd7-138df632fd0de206')
-      .should.eventually.equal(true).notify(done)
+    return lorena.connect('efd708e2b5dc1648-77326e5151d48bd7-138df632fd0de206')
+      .then((connected) => {
+        assert(connected, 'Should be connected true')
+        expect(ready).to.have.been.called()
+      })
+    // .should.eventually.equal(true).notify(done)
   })
 
-  it('should emit ready', () => {
-    expect(ready).to.have.been.called()
-  })
+  // it('should emit ready', () => {
+  //   expect(ready).to.have.been.called()
+  // })
 
   it('should have this private methods', () => {
     expect(typeof lorena.processQueue).to.equal('function')

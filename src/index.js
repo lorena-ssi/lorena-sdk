@@ -5,11 +5,12 @@ const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix
 const { EventEmitter } = require('events')
 
 class Lorena extends EventEmitter {
-  constructor (serverPath, options = {}) {
-    if (typeof serverPath === 'object') options = serverPath
+  constructor (serverPath, opts = {}) {
+    if (typeof serverPath === 'object') opts = serverPath
     if (typeof serverPath !== 'string') serverPath = DEFAULT_SERVER
-    if (options.debug) debug.enabled = true
+    if (opts.debug) debug.enabled = true
     super()
+    this.options = opts
     this.matrixUser = ''
     this.matrixPass = ''
     this.did = ''
