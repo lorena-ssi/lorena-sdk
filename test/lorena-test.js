@@ -15,7 +15,7 @@ describe('Lorena API', function () {
   const password = 'password'
 
   it('should contruct a Lorena class', async () => {
-    lorena = new Lorena()
+    lorena = new Lorena({ debug: true })
     expect(lorena).to.have.keys([
 
       'matrix',

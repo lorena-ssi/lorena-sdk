@@ -1,11 +1,14 @@
 const Matrix = require('@lorena-ssi/matrix-lib')
 const Zen = require('@lorena-ssi/zenroom-lib')
-const Logger = require('./logger')
-const logger = new Logger()
+const debug = require('debug')('lorena:cli')
+const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix.caelumlabs.com'
 const { EventEmitter } = require('events')
 
 class Lorena extends EventEmitter {
-  constructor (serverPath = 'https://matrix.caelumlabs.com') {
+  constructor (serverPath, options = {}) {
+    if (typeof serverPath === 'object') options = serverPath
+    if (typeof serverPath !== 'string') serverPath = DEFAULT_SERVER
+    if (options.debug) debug.enabled = true
     super()
     this.matrixUser = ''
     this.matrixPass = ''
@@ -39,7 +42,7 @@ class Lorena extends EventEmitter {
       const keyPair = await this.zenroom.z.newKeyPair(username)
       this.zenroom.keypair = keyPair[username].keypair
     } catch (error) {
-      logger.log(error)
+      debug('%O', error)
       this.emit('error', error)
       throw new Error('Could not create user')
     }
@@ -55,7 +58,7 @@ class Lorena extends EventEmitter {
       this.matrixUser = client[0]
       this.matrixPass = client[1]
       this.did = client[2]
-      logger.key('Login matrix user', this.matrixUser)
+      debug('Login matrix user %o', this.matrixUser)
       try {
         await this.matrix.connect(this.matrixUser, this.matrixPass)
 
@@ -70,7 +73,7 @@ class Lorena extends EventEmitter {
         this.loop()
         return true
       } catch (error) {
-        logger.log(error)
+        debug('%O', error)
         this.emit('error', error)
         throw error
       }
