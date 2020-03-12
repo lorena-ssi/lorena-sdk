@@ -48,6 +48,7 @@ class Lorena extends EventEmitter {
 
   // Connect to Lorena IDSpace.
   async connect (clientCode) {
+    if (this.ready === true) return true
     // We need three parameters : matrixUser, matrixPass & DID
     const client = clientCode.split('-')
     if (client.length === 3) {
@@ -64,6 +65,7 @@ class Lorena extends EventEmitter {
         const events = await this.matrix.events('')
         this.nextBatch = events.nextBatch
         this.ready = true
+        this.processQueue()
         this.emit('ready')
         this.loop()
         return true
@@ -116,7 +118,7 @@ class Lorena extends EventEmitter {
       threadId,
       payload
     }
-    if (!this.processing) { // execute just in time
+    if (!this.processing && this.ready) { // execute just in time
       this.processing = true
       const sendPayload = JSON.stringify(action)
       await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
