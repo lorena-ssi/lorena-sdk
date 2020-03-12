@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@lorena-ssi/matrix-lib": "^1.0.7",
-    "@lorena-ssi/zenroom-lib": "git+ssh://git@github.com:lorena-ssi/zenroom-lib.git#v1.3.3",
+    "@lorena-ssi/zenroom-lib": "lorena-ssi/zenroom-lib#v1.3.3",
     "axios": "^0.19.2",
     "chalk": "^3.0.0",
     "chalk-pipe": "^3.0.0",
