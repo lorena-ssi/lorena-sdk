@@ -14,8 +14,56 @@ describe('Lorena API', function () {
   const username = 'username123456'
   const password = 'password'
 
-  it('should contruct a Lorena class', async () => {
+  it('should contruct a Lorena class with server', async () => {
+    lorena = new Lorena('server')
+    expect(lorena).to.have.keys([
+
+      'matrix',
+      'zenroom',
+      'roomId',
+      'nextBatch',
+      'recipeId',
+      'matrixUser',
+      'matrixPass',
+      'did',
+      // 'on',
+      // 'off',
+      // 'emit',
+      '_events',
+      '_eventsCount',
+      '_maxListeners',
+      'processing',
+      'queue',
+      'ready'
+    ])
+  })
+
+  it('should contruct a Lorena class without params', async () => {
     lorena = new Lorena()
+    expect(lorena).to.have.keys([
+
+      'matrix',
+      'zenroom',
+      'roomId',
+      'nextBatch',
+      'recipeId',
+      'matrixUser',
+      'matrixPass',
+      'did',
+      // 'on',
+      // 'off',
+      // 'emit',
+      '_events',
+      '_eventsCount',
+      '_maxListeners',
+      'processing',
+      'queue',
+      'ready'
+    ])
+  })
+
+  it('should contruct a Lorena class with debug', async () => {
+    lorena = new Lorena({ debug: true })
     expect(lorena).to.have.keys([
 
       'matrix',
@@ -63,7 +111,12 @@ describe('Lorena API', function () {
     expect(ready).to.have.been.called()
   })
 
-  it('should receive pong', (done) => {
+  it('should have this private methods', () => {
+    expect(typeof lorena.processQueue).to.equal('function')
+    expect(typeof lorena.loop).to.equal('function')
+  })
+
+  it('should receive message:ping', (done) => {
     const pingAction = {
       recipe: 'ping', // Local name for your process
       recipeId: 0,
