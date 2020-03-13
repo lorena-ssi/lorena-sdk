@@ -13,6 +13,7 @@ const assert = chai.assert
 const lorenaKeys = [
   'matrix',
   'zenroom',
+  'domain',
   'roomId',
   'nextBatch',
   'options',
