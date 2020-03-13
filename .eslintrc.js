@@ -22,5 +22,6 @@ module.exports = {
     'jsdoc'
   ],
   rules: {
+    "no-global-assign": ["error", {"exceptions": ["require"]}]
   }
 }

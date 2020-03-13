@@ -1,4 +1,4 @@
-const Lorena = require('../src/index')
+const Lorena = require('../src/main.js').default
 const chai = require('chai')
 const mocha = require('mocha')
 const describe = mocha.describe
@@ -55,6 +55,9 @@ describe('Lorena API', function () {
     const a = await lorena.createUser(username, password)
     if (a) {
       expect(a).to.equal(true) // if it's a new `username`
+      expect(lorena.matixUser).to.equal(username)
+      expect(lorena.did).to.equal(username)
+      expect(lorena.matrixPass).to.equal(password)
       expect(lorena.zenroom.keypair).to.have.keys(['private_key', 'public_key'])
       expect(lorena.zenroom.keypair.private_key).to.have.lengthOf(75)
       expect(lorena.zenroom.keypair.public_key).to.have.lengthOf(151)
