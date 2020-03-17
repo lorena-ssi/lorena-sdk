@@ -24,9 +24,9 @@ const main = async () => {
 
   lorena.on('ready', async () => {
     const pingAction = {
-      recipe: 'ping', // Local name for your process
-      recipeId: 0,
-      threadRef: 'pong', // Recipe we are calling to
+      recipe: 'ping', // Remote recipe we are calling to
+      recipeId: 0, // Remote id of the recipeId we are calling to
+      threadRef: 'pong', // Local name for your process
       threadId: 2, // Local id  for your process
       payload: {}
     }
