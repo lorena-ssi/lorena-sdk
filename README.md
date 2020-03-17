@@ -15,7 +15,7 @@ npm install @lorena-ssi/lorena-cli
 const Lorena = require('@lorena-ssi/lorena-cli').default
 // const import Lorena from '@lorena-ssi/lorena-cli'
 const main = async () => {
-  const lorena = new Lorena()
+  const lorena = new Lorena({debug: true})
   lorena.connect('connectionIdString')
 
   lorena.on('error', (e) => {
@@ -43,7 +43,7 @@ main()
 
 ## API
 
-#### `new Lorena([serverPath], [options])`
+#### `new Lorena([serverPath, [options]], [options])`
 
 `serverPath` can be a valid matrix server string, default: `https://matrix.caelumlabs.com`
 
