@@ -23,14 +23,13 @@ const main = async () => {
   })
 
   lorena.on('ready', async () => {
-    const pingAction = {
+    lorena.sendAction({
       recipe: 'ping', // Remote recipe we are calling to
       recipeId: 0, // Remote id of the recipeId we are calling to
       threadRef: 'pong', // Local name for your process
       threadId: 2, // Local id  for your process
-      payload: {}
-    }
-    lorena.sendAction(pingAction.recipe, pingAction.recipeId, pingAction.threadRef, pingAction.threadId, pingAction.payload)
+      payload: {} // Payload to send
+    })
 
   })
 
