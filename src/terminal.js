@@ -1,5 +1,7 @@
+#!/usr/bin/env node
+
 var term = require('terminal-kit').terminal
-const Lorena = require('../src/main.js').default
+const Lorena = require('../src/index.js').default
 const lorena = new Lorena()
 let threadId = 0
 
