@@ -1,7 +1,7 @@
 import Matrix from '@lorena-ssi/matrix-lib'
 import Zen from '@lorena-ssi/zenroom-lib'
 import log from 'debug'
-import { once, EventEmitter } from 'events'
+import { EventEmitter } from 'events'
 
 const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix.caelumlabs.com'
 const debug = log('did:debug:cli')
@@ -156,7 +156,7 @@ export default class Lorena extends EventEmitter {
    */
   oneMsg (msg) {
     return new Promise((resolve) => {
-      once(this, msg, (data) => {
+      this.once(msg, (data) => {
         resolve(data)
       })
       // TODO: Add a timeout and reject.

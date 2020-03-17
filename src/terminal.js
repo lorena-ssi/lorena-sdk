@@ -49,7 +49,7 @@ const terminal = async () => {
         callRecipe('contact-list', 'list')
         list = await lorena.oneMsg('message:list')
         term('^+done^\n')
-        console.log(list[0].payload)
+        console.log(list)
         break
       case 'contact-info':
         term.gray('DID : ')
@@ -58,7 +58,7 @@ const terminal = async () => {
         callRecipe('contact-info', 'info', { did: input })
         info = await lorena.oneMsg('message:info')
         term('^+done^\n')
-        console.log(info[0].payload)
+        console.log(info.payload)
         break
       case 'contact-add':
         term.gray('DID : ')
