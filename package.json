@@ -10,7 +10,7 @@
     "coverage": "nyc npm run mocha && nyc report --reporter=html",
     "coveralls": "nyc npm run mocha && nyc report --reporter=text-lcov | coveralls",
     "debug": "./pds 1",
-    "lint": "eslint ./examples ./src ./test --fix",
+    "lint": "eslint ./src ./test --fix",
     "mocha": "mocha test --timeout 50000 --bail --require esm",
     "test": "npm run mocha"
   },
@@ -23,10 +23,8 @@
     "@lorena-ssi/matrix-lib": "^1.0.8",
     "@lorena-ssi/zenroom-lib": "^1.3.3",
     "debug": "^4.1.1",
-    "inquirer": "^7.1.0"
-  },
-  "directories": {
-    "example": "examples"
+    "inquirer": "^7.1.0",
+    "terminal-kit": "^1.35.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",

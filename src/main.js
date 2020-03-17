@@ -1,10 +1,10 @@
 import Matrix from '@lorena-ssi/matrix-lib'
 import Zen from '@lorena-ssi/zenroom-lib'
 import log from 'debug'
-import { EventEmitter } from 'events'
+import { once, EventEmitter } from 'events'
 
 const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix.caelumlabs.com'
-const debug = log('lorena:cli')
+const debug = log('did:debug:cli')
 
 /**
  * Lorena SDK - Class
@@ -146,6 +146,21 @@ export default class Lorena extends EventEmitter {
     if (this.queue.length === 0) {
       this.processing = false
     }
+  }
+
+  /**
+   * Waits for something to happen only once
+   *
+   * @param {string} msg Message to be listened to
+   * @returns {Promise} Promise with the result
+   */
+  oneMsg (msg) {
+    return new Promise((resolve) => {
+      once(this, msg, (data) => {
+        resolve(data)
+      })
+      // TODO: Add a timeout and reject.
+    })
   }
 
   /**
