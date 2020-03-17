@@ -43,7 +43,7 @@ main()
 
 ## API
 
-#### `new Lorena([serverPath, [options]], [options])`
+#### `new Lorena([serverPath[,options]] || [options])`
 
 `serverPath` can be a valid matrix server string, default: `https://matrix.caelumlabs.com`
 
