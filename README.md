@@ -66,26 +66,37 @@ Throws an error and emits `error` if fails.
 
 Connect to Lorena IDSpace.
 `connectionstring` is a concatenation of username-password-did
+
 Returns true if the connection is success
+
 Throws an error and emits `error` if fails.
 
 #### `sendAction(recipe, recipeId, threadRef, thReadId, payload)`
 
 Sends an action to another DID.
+
 `recipe` Remote recipe name
+
 `recipeId` Remote recipe Id
+
 `threadRef`Local Recipe name
+
 `threadId` Local recipr Id
+
 `payload` Information to send
 
 ### `on(message[:threadRef, :type], [function])`
 
 Listen to events and execute the callback function
+
 `threadRef` is the one sended to `sendAction` 
 
 You can listen to all messages `on('message')`
+
 or listen to a specific threadRef `on('message:pong')`
+
 or listen to a specific event types `on('message:contact-list')`
+
 
 ### `off(message[:threadRef, :type])`
 
