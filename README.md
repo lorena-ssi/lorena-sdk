@@ -84,17 +84,15 @@ Sends an action to another DID.
 
 `payload` Information to send
 
-### `on(message[:threadRef, :type], [function])`
+### `on(message[:threadRef, :type], [function(payload)])`
 
 Listen to events and execute the callback function
 
 `threadRef` is the one sended to `sendAction` 
 
-You can listen to all messages `on('message')`
+`type` TODO
 
-or listen to a specific threadRef `on('message:pong')`
-
-or listen to a specific event types `on('message:contact-list')`
+`payload` is the data coming from the remote recipe
 
 
 ### `off(message[:threadRef, :type])`
