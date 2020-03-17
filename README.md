@@ -1,6 +1,6 @@
 ## Lorena Client
 
-Client to 
+Client to manage IDspaces
 
 ```
 npm install @lorena-ssi/lorena-cli
