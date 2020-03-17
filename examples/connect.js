@@ -16,7 +16,6 @@ const main = async () => {
   })
 
   lorena.on('ready', async () => {
-
     /*
     const contactAction = {
       recipe: 'contact-add', // Local name for your process
