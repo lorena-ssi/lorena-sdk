@@ -6,7 +6,15 @@ import { EventEmitter } from 'events'
 const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix.caelumlabs.com'
 const debug = log('lorena:cli')
 
+/**
+ * Lorena SDK - Class
+ */
 export default class Lorena extends EventEmitter {
+  /**
+   *
+   * @param {object} serverPath Connection Object/String
+   * @param {object} opts Options
+   */
   constructor (serverPath, opts = {}) {
     super()
     if (typeof serverPath === 'object') opts = serverPath
@@ -27,7 +35,12 @@ export default class Lorena extends EventEmitter {
     this.ready = false
   }
 
-  // Create Matrix user and zenroom keypair
+  /**
+   * Create Matrix user and zenroom keypair
+   *
+   * @param {string} username Matrix username
+   * @param {string} password Matrix Password
+   */
   async createUser (username, password) {
     try {
       const available = await this.matrix.available(username)
@@ -53,7 +66,11 @@ export default class Lorena extends EventEmitter {
     }
   }
 
-  // Connect to Lorena IDSpace.
+  /**
+   * Connect to Lorena IDSpace.
+   *
+   * @param {string} clientCode usr-pass-did
+   */
   async connect (clientCode) {
     if (this.ready === true) return true
     // We need three parameters : matrixUser, matrixPass & DID
@@ -84,19 +101,30 @@ export default class Lorena extends EventEmitter {
     }
   }
 
+  /**
+   * Loop through received messages.
+   */
   async loop () {
     while (true) {
       const events = await this.getMessages()
       this.processQueue()
 
       events.forEach(element => {
-        const parsedElement = JSON.parse(element.payload.body)
-        this.emit(`message:${parsedElement.remoteRecipe}`, parsedElement)
-        this.emit('message', parsedElement)
+        try {
+          const parsedElement = JSON.parse(element.payload.body)
+          this.emit(`message:${parsedElement.threadRef}`, parsedElement)
+          this.emit('message', parsedElement)
+        } catch (_e) {
+          console.log(_e)
+          this.emit('warning', 'element unknown')
+        }
       })
     }
   }
 
+  /**
+   * get All maessages
+   */
   async getMessages () {
     let result = await this.matrix.events(this.nextBatch)
     // If empty (try again)
@@ -107,6 +135,9 @@ export default class Lorena extends EventEmitter {
     return (result.events)
   }
 
+  /**
+   * process Incoming queue of messages
+   */
   async processQueue () {
     if (this.queue.length > 0) {
       const sendPayload = JSON.stringify(this.queue.pop())
@@ -117,6 +148,15 @@ export default class Lorena extends EventEmitter {
     }
   }
 
+  /**
+   * Sends an action to another DID
+   *
+   * @param {string} recipe Remote recipe name
+   * @param {number} recipeId Remote recipe Id
+   * @param {string} threadRef Local Recipe name
+   * @param {number} threadId Local recipr Id
+   * @param {object} payload Information to send
+   */
   async sendAction (recipe, recipeId, threadRef, threadId, payload) {
     const action = {
       recipe,

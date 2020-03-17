@@ -1,6 +1,6 @@
 {
   "name": "@lorena-ssi/lorena-cli",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Lorena Client",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "MIT",
@@ -23,7 +23,6 @@
     "@lorena-ssi/matrix-lib": "^1.0.7",
     "@lorena-ssi/zenroom-lib": "^1.3.3",
     "debug": "^4.1.1",
-    "esm": "^3.2.25",
     "inquirer": "^7.1.0"
   },
   "directories": {
@@ -42,6 +41,7 @@
     "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "esm": "^3.2.25",
     "husky": "^4.2.3",
     "mocha": "^7.1.0",
     "mocha-lcov-reporter": "^1.3.0",
