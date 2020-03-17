@@ -112,7 +112,7 @@ export default class Lorena extends EventEmitter {
       events.forEach(element => {
         try {
           const parsedElement = JSON.parse(element.payload.body)
-          this.emit(`message:${parsedElement.threadRef}`, parsedElement)
+          this.emit(`message:${parsedElement.recipe}`, parsedElement)
           this.emit('message', parsedElement)
         } catch (_e) {
           console.log(_e)
