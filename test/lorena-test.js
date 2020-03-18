@@ -35,19 +35,19 @@ describe('Lorena API', function () {
 
   it('should contruct a Lorena class with server', async () => {
     lorena = new Lorena('server')
-    expect(lorena).to.have.keys(lorenaKeys)
+    expect(lorena).to.include.all.keys(lorenaKeys)
     assert(!lorena.options.debug)
   })
 
   it('should contruct a Lorena class without params', async () => {
     lorena = new Lorena()
-    expect(lorena).to.have.keys(lorenaKeys)
+    expect(lorena).to.include.all.keys(lorenaKeys)
     assert(!lorena.options.debug)
   })
 
   it('should contruct a Lorena class with debug', async () => {
     lorena = new Lorena({ debug: true })
-    expect(lorena).to.have.keys(lorenaKeys)
+    expect(lorena).to.include.all.keys(lorenaKeys)
     assert(lorena.options.debug)
   })
 
@@ -85,6 +85,7 @@ describe('Lorena API', function () {
   it('should have this private methods', () => {
     expect(typeof lorena.processQueue).to.equal('function')
     expect(typeof lorena.loop).to.equal('function')
+    expect(typeof lorena.oneMsg).to.equal('function')
   })
 
   it('should receive message:ping', (done) => {
