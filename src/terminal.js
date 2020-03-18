@@ -109,9 +109,10 @@ const main = async () => {
   term.gray('Conecting to idspace...')
   // lorena.connect('5c7ca0ef4248e3a5-b987eb7a015b24d8-d81519de41ebdbba')
   // lorena.connect('efd708e2b5dc1648-77326e5151d48bd7-138df632fd0de206')
-
+  // local js 804ec4b8a267e70d-47c07dab0617d5a8-6e89996fccb6f42b
   // Caelum Labs -local (nikola as password)
-  lorena.connect('995b5406aeb758fe-2fcc3e8a0c8400ab-42dd5715a308829e')
+  // lorena.connect('995b5406aeb758fe-2fcc3e8a0c8400ab-42dd5715a308829e')
+  lorena.connect(process.argv[2] ? process.argv[2] : '5c7ca0ef4248e3a5-b987eb7a015b24d8-d81519de41ebdbba')
 
   lorena.on('error', (e) => {
     console.log('ERROR!!', e)
