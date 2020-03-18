@@ -6,6 +6,9 @@
   "license": "MIT",
   "main": "src/index.js",
   "module": "src/main.js",
+  "bin": {
+    "lorena": "./src/terminal.js"
+  },
   "scripts": {
     "coverage": "nyc npm run mocha && nyc report --reporter=html",
     "coveralls": "nyc npm run mocha && nyc report --reporter=text-lcov | coveralls",
