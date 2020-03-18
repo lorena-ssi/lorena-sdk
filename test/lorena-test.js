@@ -13,6 +13,7 @@ const assert = chai.assert
 const lorenaKeys = [
   'matrix',
   'zenroom',
+  'domain',
   'roomId',
   'nextBatch',
   'options',
@@ -35,6 +36,7 @@ describe('Lorena API', function () {
 
   it('should contruct a Lorena class with server', async () => {
     lorena = new Lorena('server')
+    console.log('DOMAIN??', lorena.domain)
     expect(lorena).to.have.keys(lorenaKeys)
     assert(!lorena.options.debug)
   })
