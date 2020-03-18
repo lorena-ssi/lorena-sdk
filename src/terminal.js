@@ -80,7 +80,7 @@ const terminal = async () => {
 }
 const main = async () => {
   term.gray('Conecting to idspace...')
-  lorena.connect('5c7ca0ef4248e3a5-b987eb7a015b24d8-d81519de41ebdbba')
+  lorena.connect('d61e92073d2f8cbf-c384c8b8f6cc9b2e-d81519de41ebdbba')
 
   lorena.on('error', (e) => {
     console.log('ERROR!!', e)
