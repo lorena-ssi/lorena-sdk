@@ -112,7 +112,6 @@ const main = async () => {
 
   // Caelum Labs -local (nikola as password)
   lorena.connect('995b5406aeb758fe-2fcc3e8a0c8400ab-42dd5715a308829e')
-  
 
   lorena.on('error', (e) => {
     console.log('ERROR!!', e)
