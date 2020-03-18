@@ -1,5 +1,7 @@
+#!/usr/bin/env node
+
 var term = require('terminal-kit').terminal
-const Lorena = require('../src/main.js').default
+const Lorena = require('../src/index.js').default
 const lorena = new Lorena()
 let threadId = 0
 
@@ -17,70 +19,96 @@ const callRecipe = (recipe, thread, payload = {}) => {
 
 term.magenta('Lorena ^+Client^\n')
 const terminal = async () => {
-  let input, list, info
+  let input
   const history = []
   const autoComplete = ['ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info']
 
-  while (true) {
-    term.magenta('lorena# ')
-    input = await term.inputField({ history: history, autoComplete: autoComplete, autoCompleteMenu: true }).promise
-    term.magenta('\n')
-    switch (input) {
-      case 'help':
-        term.gray('actions :\n')
-        console.log(autoComplete)
-        break
-      case 'ping':
-        term.gray('ping...')
-        callRecipe('ping', 'pong')
+  term.magenta('lorena# ')
+  term.on('key', function (name, matches, data) {
+    if (name === 'CTRL_C') {
+      term.grabInput(false)
+      setTimeout(function () { process.exit() }, 100)
+    }
+  })
+  input = await term.inputField({ history: history, autoComplete: autoComplete, autoCompleteMenu: true }).promise
+  term.magenta('\n')
+  switch (input) {
+    case 'help':
+      term.gray('actions :\n')
+      console.log(autoComplete)
+      break
+    case 'ping':
+      term.gray('ping...')
+      callRecipe('ping', 'pong')
+      try {
         await lorena.oneMsg('message:pong')
         term('^+pong^\n')
-        break
-      case 'ping-remote':
-        term.gray('DID : ')
-        input = await term.inputField().promise
-        term.gray('\nping remote...')
-        callRecipe('ping-remote', 'pong', { did: input })
+      } catch (error) {
+        term.gray(`^+${error.message}^\n`)
+      }
+      break
+    case 'ping-remote':
+      term.gray('DID : ')
+      input = await term.inputField().promise
+      term.gray('\nping remote...')
+      callRecipe('ping-remote', 'pong', { did: input })
+      try {
         await lorena.oneMsg('message:pong')
         term('^+pong^\n')
-        break
-      case 'contact-list':
-        term.gray('getting list...')
-        callRecipe('contact-list', 'list')
-        list = await lorena.oneMsg('message:list')
+      } catch (error) {
+        term.gray(`^+${error.message}^\n`)
+      }
+      break
+    case 'contact-list':
+      term.gray('getting list...')
+      callRecipe('contact-list', 'list')
+      try {
+        const list = await lorena.oneMsg('message:list')
         term('^+done^\n')
         console.log(list)
-        break
-      case 'contact-info':
-        term.gray('DID : ')
-        input = await term.inputField().promise
-        term.gray('\ngetting info...')
-        callRecipe('contact-info', 'info', { did: input })
-        info = await lorena.oneMsg('message:info')
+      } catch (error) {
+        term.gray(`^+${error.message}^\n`)
+      }
+      break
+    case 'contact-info':
+      term.gray('DID : ')
+      input = await term.inputField().promise
+      term.gray('\ngetting info...')
+      callRecipe('contact-info', 'info', { did: input })
+      try {
+        const info = await lorena.oneMsg('message:info')
         term('^+done^\n')
         console.log(info.payload)
-        break
-      case 'contact-add':
-        term.gray('DID : ')
-        input = await term.inputField().promise
-        term.gray('\nContacting...')
-        callRecipe('contact-add', 'add', {
-          did: input,
-          matrix: '@' + input + ':matrix.caelumlabs.com'
-        })
+      } catch (error) {
+        term.gray(`^+${error.message}^\n`)
+      }
+      break
+    case 'contact-add':
+      term.gray('DID : ')
+      input = await term.inputField().promise
+      term.gray('\nContacting...')
+      callRecipe('contact-add', 'add', {
+        did: input,
+        matrix: '@' + input + ':matrix.caelumlabs.com'
+      })
+      try {
         await lorena.oneMsg('message:add')
         term('^+done^\n')
-        break
-      case 'exit':
-      case 'quit':
-      case 'q':
-        process.exit()
-    }
+      } catch (error) {
+        term.gray(`^+${error.message}^\n`)
+      }
+      break
+    case 'exit':
+    case 'quit':
+    case 'q':
+      process.exit()
   }
+  terminal()
 }
 const main = async () => {
   term.gray('Conecting to idspace...')
-  lorena.connect('d61e92073d2f8cbf-c384c8b8f6cc9b2e-d81519de41ebdbba')
+  // lorena.connect('5c7ca0ef4248e3a5-b987eb7a015b24d8-d81519de41ebdbba')
+  lorena.connect('efd708e2b5dc1648-77326e5151d48bd7-138df632fd0de206')
 
   lorena.on('error', (e) => {
     console.log('ERROR!!', e)

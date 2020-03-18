@@ -155,12 +155,16 @@ export default class Lorena extends EventEmitter {
    * @returns {Promise} Promise with the result
    */
   oneMsg (msg) {
-    return new Promise((resolve) => {
-      this.once(msg, (data) => {
-        resolve(data)
-      })
-      // TODO: Add a timeout and reject.
-    })
+    return Promise.race(
+      [
+        new Promise((resolve) => {
+          this.once(msg, (data) => {
+            resolve(data)
+          })
+        }),
+        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+      ]
+    )
   }
 
   /**
