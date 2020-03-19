@@ -193,4 +193,16 @@ export default class Lorena extends EventEmitter {
     }
     return this.recipeId
   }
+
+  /**
+   * Overrides `on` from EventEmitter to dispatch ready if this.ready.
+   *
+   * @param {string} event Event name
+   * @param {Function} cb Callback function
+   * @returns {void}
+   */
+  on (event, cb) {
+    if (event === 'ready' && this.ready) return cb()
+    return super.on(event, cb)
+  }
 }
