@@ -136,7 +136,7 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * process Incoming queue of messages
+   * process Outgoing queue of messages
    */
   async processQueue () {
     if (this.queue.length > 0) {
