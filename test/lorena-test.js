@@ -106,7 +106,7 @@ describe('Lorena API', function () {
       process.exit() // quick exit tests, move when more tests added
     }
     const onpong = chai.spy(pong)
-    lorena.on('message:ping', onpong)
+    lorena.on('message:pong', onpong)
     lorena.sendAction(pingAction.recipe, pingAction.recipeId, pingAction.threadRef, pingAction.threadId, pingAction.payload)
   })
 })
