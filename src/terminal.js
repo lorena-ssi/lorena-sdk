@@ -21,7 +21,7 @@ term.magenta('Lorena ^+Client^\n')
 const terminal = async () => {
   let input
   const history = []
-  const autoComplete = ['ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info']
+  const autoComplete = ['ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info', 'peer-add', 'peer-list']
 
   term.magenta('lorena# ')
   term.on('key', function (name, matches, data) {
@@ -83,21 +83,50 @@ const terminal = async () => {
         term.gray(`^+${error.message}^\n`)
       }
       break
-    case 'contact-add':
-      term.gray('DID : ')
-      input = await term.inputField().promise
-      term.gray('\nContacting...')
-      callRecipe('contact-add', 'add', {
-        did: input,
-        matrix: '@' + input + ':matrix.caelumlabs.com'
-      })
+    case 'peer-list':
+      term.gray('getting list...')
+      callRecipe('peer-list', 'list')
       try {
-        await lorena.oneMsg('message:add')
+        const list = await lorena.oneMsg('message:list')
+        term('^+done^\n')
+        console.log(list)
+      } catch (error) {
+        term.gray(`^+${error.message}^\n`)
+      }
+      break
+    case 'peer-add':
+      input = {}
+      term.gray('Name : ')
+      input.name = await term.inputField().promise
+      term.gray('\nEmail : ')
+      input.email = await term.inputField().promise
+      term.gray('\nRole : ')
+      var items = ['Admin','Developer','Business']
+      input.role =  await term.singleColumnMenu( items ).promise
+      term.gray('\nAddin peer...')
+      callRecipe('peer-add', 'peer-add', input)
+      try {
+        await lorena.oneMsg('message:peer-add')
         term('^+done^\n')
       } catch (error) {
         term.gray(`^+${error.message}^\n`)
       }
       break
+      case 'contact-add':
+        term.gray('DID : ')
+        input = await term.inputField().promise
+        term.gray('\nContacting...')
+        callRecipe('contact-add', 'add', {
+          did: input,
+          matrix: '@' + input + ':matrix.caelumlabs.com'
+        })
+        try {
+          await lorena.oneMsg('message:add')
+          term('^+done^\n')
+        } catch (error) {
+          term.gray(`^+${error.message}^\n`)
+        }
+        break
     case 'exit':
     case 'quit':
     case 'q':
