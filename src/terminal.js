@@ -101,8 +101,8 @@ const terminal = async () => {
       term.gray('\nEmail : ')
       input.email = await term.inputField().promise
       term.gray('\nRole : ')
-      var items = ['Admin','Developer','Business']
-      input.role =  await term.singleColumnMenu( items ).promise
+      var items = ['Admin', 'Developer', 'Business']
+      input.role = await term.singleColumnMenu(items).promise
       term.gray('\nAddin peer...')
       callRecipe('peer-add', 'peer-add', input)
       try {
@@ -112,21 +112,21 @@ const terminal = async () => {
         term.gray(`^+${error.message}^\n`)
       }
       break
-      case 'contact-add':
-        term.gray('DID : ')
-        input = await term.inputField().promise
-        term.gray('\nContacting...')
-        callRecipe('contact-add', 'add', {
-          did: input,
-          matrix: '@' + input + ':matrix.caelumlabs.com'
-        })
-        try {
-          await lorena.oneMsg('message:add')
-          term('^+done^\n')
-        } catch (error) {
-          term.gray(`^+${error.message}^\n`)
-        }
-        break
+    case 'contact-add':
+      term.gray('DID : ')
+      input = await term.inputField().promise
+      term.gray('\nContacting...')
+      callRecipe('contact-add', 'add', {
+        did: input,
+        matrix: '@' + input + ':matrix.caelumlabs.com'
+      })
+      try {
+        await lorena.oneMsg('message:add')
+        term('^+done^\n')
+      } catch (error) {
+        term.gray(`^+${error.message}^\n`)
+      }
+      break
     case 'exit':
     case 'quit':
     case 'q':
