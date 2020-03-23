@@ -9,9 +9,12 @@ term.magenta('Lorena ^+Client^\n')
 
 const main = async () => {
   term.gray('\nUsername :')
-  const username = await term.inputField().promise
+  // const username = await term.inputField().promise
+  const username = 'alex'
+
   term.gray('\nPassword :')
-  const password = await term.inputField().promise
+  // const password = await term.inputField().promise
+  const password = 'nikola'
 
   const storageFile = home + '/.lorena/data/' + username + '.json'
   const lorena = new Lorena({ storage: 'file', file: storageFile })
@@ -112,6 +115,17 @@ const terminal = async (lorena) => {
         term.gray(`^+${error.message}^\n`)
       }
       break
+    case 'client-handshake':
+        term.gray('handshake...')
+        callRecipe(lorena, 'client-handshake', 'handshake', {})
+        try {
+          const list = await lorena.oneMsg('message:handshake')
+          term('^+done^\n')
+          console.log(list)
+        } catch (error) {
+          term.gray(`^+${error.message}^\n`)
+        }
+        break
     case 'contact-list':
       term.gray('getting list...')
       callRecipe(lorena, 'contact-list', 'list')
@@ -185,7 +199,7 @@ const terminal = async (lorena) => {
     case 'q':
       process.exit()
   }
-  terminal()
+  terminal(lorena)
 }
 
 main()
