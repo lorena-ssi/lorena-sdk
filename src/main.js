@@ -1,6 +1,8 @@
 import Matrix from '@lorena-ssi/matrix-lib'
-import Zen from '@lorena-ssi/zenroom-lib'
+import Zenroom from '@lorena-ssi/zenroom-lib'
 import log from 'debug'
+import fs from 'fs'
+import path from 'path'
 import { EventEmitter } from 'events'
 
 const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix.caelumlabs.com'
@@ -12,23 +14,23 @@ const debug = log('did:debug:cli')
 export default class Lorena extends EventEmitter {
   /**
    *
-   * @param {object} serverPath Connection Object/String
    * @param {object} opts Options
    */
-  constructor (serverPath, opts = {}) {
+  constructor (opts = { storage: 'localStorage' }) {
     super()
-    if (typeof serverPath === 'object') opts = serverPath
-    if (typeof serverPath !== 'string') serverPath = DEFAULT_SERVER
+    this.opts = opts
     if (opts.debug) debug.enabled = true
+    this.info = {
+      matrixUser: '',
+      matrixPass: '',
+      did: '',
+      roomId: '',
+      keyPair: {},
+      nextBatch: ''
+    }
 
-    this.options = opts
-    this.matrixUser = ''
-    this.matrixPass = ''
-    this.did = ''
-    this.matrix = new Matrix(serverPath)
-    this.zenroom = { z: new Zen() }
-    this.roomId = ''
-    this.nextBatch = ''
+    this.zenroom = new Zenroom()
+    this.matrix = new Matrix(DEFAULT_SERVER)
     this.recipeId = 0
     this.queue = []
     this.processing = false
@@ -36,68 +38,105 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * Create Matrix user and zenroom keypair
    *
-   * @param {string} username Matrix username
-   * @param {string} password Matrix Password
+   * @param {string} username User name
+   * @param {string} password Pass
    */
-  async createUser (username, password) {
-    try {
-      const available = await this.matrix.available(username)
-      if (available) {
-        this.matrixUser = username
-        this.did = username
-        this.matrixPass = password
-        await this.matrix.register(username, password)
-        // Update variables `matrixUser`, `matrixPass`, and `did`
-        this.matrixUser = username
-        this.matrixPass = password
-        this.did = username
-        const keyPair = await this.zenroom.z.newKeyPair(username)
-        this.zenroom.keypair = keyPair[username].keypair
-        return true
+  async loadConf (username, password) {
+    this.info.name = username
+    return new Promise((resolve) => {
+      if (this.opts.storage === 'localStorage') {
+        console.log('TODO: Not implemented Yet')
+        resolve(false)
+      } else if (this.opts.storage === 'file') {
+        if (fs.existsSync(this.opts.file)) {
+          fs.readFile(this.opts.file, 'utf8', (err, data) => {
+            if (err) {
+              resolve(false)
+            }
+            const secret = JSON.parse(data)
+            this.zenroom.decryptSymmetric(password, secret)
+              .then((clientCode) => {
+                this.info = JSON.parse(clientCode.message)
+                resolve(this.info)
+              })
+          })
+        } else {
+          resolve(false)
+        }
       } else {
-        return false
+        resolve(false)
       }
-    } catch (error) {
-      debug('%O', error)
-      this.emit('error', error)
-      throw new Error('Could not create user')
-    }
+    })
+  }
+
+  async newClient (connString, pin, password) {
+    return new Promise((resolve) => {
+      const conn = connString.split('-#-')
+      const m = { secret_message: { checksum: conn[0], header: conn[1], iv: conn[2], text: conn[3] } }
+      this.zenroom.decryptSymmetric(pin, m)
+        .then((clientCode) => {
+          const client = clientCode.message.split('-')
+          this.info.matrixUser = client[0]
+          this.info.matrixPass = client[1]
+          this.info.did = client[2]
+          return this.matrix.connect(this.info.matrixUser, this.info.matrixPass)
+        })
+        .then(() => {
+          return this.matrix.joinedRooms()
+        })
+        .then((rooms) => {
+          this.info.roomId = rooms[0]
+          return this.zenroom.newKeyPair(this.info.did)
+        })
+        .then((keyPair) => {
+          this.info.keyPair = keyPair
+          const msg = JSON.stringify(this.info)
+          return this.zenroom.encryptSymmetric(password, msg, 'local Storage')
+        })
+        .then((encryptedConf) => {
+          const confDir = path.dirname(this.opts.file)
+          if (this.opts.storage === 'file') {
+            fs.promises.mkdir(confDir, { recursive: true })
+              .then(() => {
+                fs.writeFileSync(this.opts.file, JSON.stringify(encryptedConf))
+                resolve(this.info)
+              })
+              .catch((e) => {
+                console.log(e)
+                resolve(false)
+              })
+          } else {
+            resolve(false)
+          }
+        })
+        .catch((e) => {
+          console.log(e)
+          resolve(false)
+        })
+    })
   }
 
   /**
    * Connect to Lorena IDSpace.
-   *
-   * @param {string} clientCode usr-pass-did
    */
-  async connect (clientCode) {
+  async connect () {
     if (this.ready === true) return true
-    // We need three parameters : matrixUser, matrixPass & DID
-    const client = clientCode.split('-')
-    if (client.length === 3) {
-      this.matrixUser = client[0]
-      this.matrixPass = client[1]
-      this.did = client[2]
-      debug('Login matrix user %o', this.matrixUser)
-      try {
-        await this.matrix.connect(this.matrixUser, this.matrixPass)
+    try {
+      await this.matrix.connect(this.info.matrixUser, this.info.matrixPass)
 
-        // TODO: No need to store token in the database. Use in memory instead.
-        const rooms = await this.matrix.joinedRooms()
-        this.roomId = rooms[0]
-        const events = await this.matrix.events('')
-        this.nextBatch = events.nextBatch
-        this.ready = true
-        this.processQueue()
-        this.emit('ready')
-        this.loop()
-        return true
-      } catch (error) {
-        debug('%O', error)
-        this.emit('error', error)
-        throw error
-      }
+      // TODO: No need to store token in the database. Use in memory instead.
+      const events = await this.matrix.events('')
+      this.info.nextBatch = events.nextBatch
+      this.ready = true
+      this.processQueue()
+      this.emit('ready')
+      this.loop()
+      return true
+    } catch (error) {
+      debug('%O', error)
+      this.emit('error', error)
+      throw error
     }
   }
 
@@ -126,12 +165,12 @@ export default class Lorena extends EventEmitter {
    * get All maessages
    */
   async getMessages () {
-    let result = await this.matrix.events(this.nextBatch)
+    let result = await this.matrix.events(this.info.nextBatch)
     // If empty (try again)
     if (result.events.length === 0) {
-      result = await this.matrix.events(this.nextBatch)
+      result = await this.matrix.events(this.info.nextBatch)
     }
-    this.nextBatch = result.nextBatch
+    this.info.nextBatch = result.nextBatch
     return (result.events)
   }
 
@@ -187,7 +226,7 @@ export default class Lorena extends EventEmitter {
     if (!this.processing && this.ready) { // execute just in time
       this.processing = true
       const sendPayload = JSON.stringify(action)
-      await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
+      await this.matrix.sendMessage(this.info.roomId, 'm.action', sendPayload)
     } else {
       this.queue.push(action)
     }

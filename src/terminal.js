@@ -1,11 +1,60 @@
 #!/usr/bin/env node
-
 var term = require('terminal-kit').terminal
+const os = require('os')
+const home = os.homedir()
 const Lorena = require('../src/index.js').default
-const lorena = new Lorena()
 let threadId = 0
 
-const callRecipe = (recipe, thread, payload = {}) => {
+term.magenta('Lorena ^+Client^\n')
+
+const main = async () => {
+  term.gray('\nUsername :')
+  const username = await term.inputField().promise
+  term.gray('\nPassword :')
+  const password = await term.inputField().promise
+
+  const storageFile = home + '/.lorena/data/' + username + '.json'
+  const lorena = new Lorena({ storage: 'file', file: storageFile })
+  term.gray('\nConnecting...')
+  // get basic configuration
+  const conf = await lorena.loadConf(username, password)
+  if (conf === false) {
+    // First Time.
+    term.gray('Creating new connection')
+    term.gray('\nConnection String :')
+    const connString = await term.inputField().promise
+    // const connString = 'Ygg7QhoNdbPmP1UTqnl22w-#-NDM2ZjZlNmU2NTYzNzQ2OTZmNmUyMDUzNzQ3MjY5NmU2Nw-#-jWDo3rHGqwMn3jnfRbBtNLmdsaC2UMzyura2dySL4Os-#-OKESp6vasShke5HVunTL5POsfEAyK33QnCDqzDGJKXFp_INhqkBaKM8i6ftlg1deyoZq6MMIaQUIZuEsFFjMNMGpRmYgtnOIKXFsJ9GhZ5kiV775EfeeXnwoh7o'
+
+    term.gray('\nPIN :')
+    const pin = await term.inputField().promise
+    // const pin = '223447'
+    term.gray('\nCreate connection...')
+    await lorena.newClient(connString, pin, password)
+  }
+
+  lorena.connect()
+  lorena.on('error', (e) => {
+    console.log('ERROR!!', e)
+  })
+  lorena.on('ready', async () => {
+    term('^+connected^\n')
+    terminal(lorena)
+  })
+
+  lorena.on('message:pong', (payload) => {
+    // term( '^+received ^\n' )
+  })
+}
+
+/**
+ * Calls a remote recipe.
+ *
+ * @param {object} lorena Lorena Object
+ * @param {string} recipe Recipe id to be called
+ * @param {*} thread Thread id calling the recipe
+ * @param {*} payload Payload
+ */
+const callRecipe = (lorena, recipe, thread, payload = {}) => {
   const pingAction = {
     recipe: recipe, // Local name for your process
     recipeId: 0,
@@ -17,8 +66,12 @@ const callRecipe = (recipe, thread, payload = {}) => {
   threadId++
 }
 
-term.magenta('Lorena ^+Client^\n')
-const terminal = async () => {
+/**
+ * Opens the terminal
+ *
+ * @param {object} lorena Lorena Obkect
+ */
+const terminal = async (lorena) => {
   let input
   const history = []
   const autoComplete = ['ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info', 'peer-add', 'peer-list']
@@ -39,7 +92,7 @@ const terminal = async () => {
       break
     case 'ping':
       term.gray('ping...')
-      callRecipe('ping', 'pong')
+      callRecipe(lorena, 'ping', 'pong')
       try {
         await lorena.oneMsg('message:pong')
         term('^+pong^\n')
@@ -51,7 +104,7 @@ const terminal = async () => {
       term.gray('DID : ')
       input = await term.inputField().promise
       term.gray('\nping remote...')
-      callRecipe('ping-remote', 'pong', { did: input })
+      callRecipe(lorena, 'ping-remote', 'pong', { did: input })
       try {
         await lorena.oneMsg('message:pong')
         term('^+pong^\n')
@@ -61,7 +114,7 @@ const terminal = async () => {
       break
     case 'contact-list':
       term.gray('getting list...')
-      callRecipe('contact-list', 'list')
+      callRecipe(lorena, 'contact-list', 'list')
       try {
         const list = await lorena.oneMsg('message:list')
         term('^+done^\n')
@@ -74,7 +127,7 @@ const terminal = async () => {
       term.gray('DID : ')
       input = await term.inputField().promise
       term.gray('\ngetting info...')
-      callRecipe('contact-info', 'info', { did: input })
+      callRecipe(lorena, 'contact-info', 'info', { did: input })
       try {
         const info = await lorena.oneMsg('message:info')
         term('^+done^\n')
@@ -85,7 +138,7 @@ const terminal = async () => {
       break
     case 'peer-list':
       term.gray('getting list...')
-      callRecipe('peer-list', 'list')
+      callRecipe(lorena, 'peer-list', 'list')
       try {
         const list = await lorena.oneMsg('message:list')
         term('^+done^\n')
@@ -104,7 +157,7 @@ const terminal = async () => {
       var items = ['Admin', 'Developer', 'Business']
       input.role = await term.singleColumnMenu(items).promise
       term.gray('\nAddin peer...')
-      callRecipe('peer-add', 'peer-add', input)
+      callRecipe(lorena, 'peer-add', 'peer-add', input)
       try {
         await lorena.oneMsg('message:peer-add')
         term('^+done^\n')
@@ -116,7 +169,7 @@ const terminal = async () => {
       term.gray('DID : ')
       input = await term.inputField().promise
       term.gray('\nContacting...')
-      callRecipe('contact-add', 'add', {
+      callRecipe(lorena, 'contact-add', 'add', {
         did: input,
         matrix: '@' + input + ':matrix.caelumlabs.com'
       })
@@ -133,27 +186,6 @@ const terminal = async () => {
       process.exit()
   }
   terminal()
-}
-const main = async () => {
-  term.gray('Conecting to idspace...')
-  // lorena.connect('5c7ca0ef4248e3a5-b987eb7a015b24d8-d81519de41ebdbba')
-  // lorena.connect('efd708e2b5dc1648-77326e5151d48bd7-138df632fd0de206')
-  // local js 804ec4b8a267e70d-47c07dab0617d5a8-6e89996fccb6f42b
-  // Caelum Labs -local (nikola as password)
-  // lorena.connect('995b5406aeb758fe-2fcc3e8a0c8400ab-42dd5715a308829e')
-  lorena.connect(process.argv[2] ? process.argv[2] : '5c7ca0ef4248e3a5-b987eb7a015b24d8-d81519de41ebdbba')
-
-  lorena.on('error', (e) => {
-    console.log('ERROR!!', e)
-  })
-  lorena.on('ready', async () => {
-    term('^+connected^\n')
-    terminal()
-  })
-
-  lorena.on('message:pong', (payload) => {
-    // term( '^+received ^\n' )
-  })
 }
 
 main()
