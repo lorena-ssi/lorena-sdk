@@ -116,16 +116,16 @@ const terminal = async (lorena) => {
       }
       break
     case 'client-handshake':
-        term.gray('handshake...')
-        callRecipe(lorena, 'client-handshake', 'handshake', {})
-        try {
-          const list = await lorena.oneMsg('message:handshake')
-          term('^+done^\n')
-          console.log(list)
-        } catch (error) {
-          term.gray(`^+${error.message}^\n`)
-        }
-        break
+      term.gray('handshake...')
+      callRecipe(lorena, 'client-handshake', 'handshake', {})
+      try {
+        const list = await lorena.oneMsg('message:handshake')
+        term('^+done^\n')
+        console.log(list)
+      } catch (error) {
+        term.gray(`^+${error.message}^\n`)
+      }
+      break
     case 'contact-list':
       term.gray('getting list...')
       callRecipe(lorena, 'contact-list', 'list')
