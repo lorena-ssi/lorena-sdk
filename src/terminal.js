@@ -9,12 +9,12 @@ term.magenta('Lorena ^+Client^\n')
 
 const main = async () => {
   term.gray('\nUsername :')
-  // const username = await term.inputField().promise
-  const username = 'alex'
+  const username = await term.inputField().promise
+  // const username = 'alex'
 
   term.gray('\nPassword :')
-  // const password = await term.inputField().promise
-  const password = 'nikola'
+  const password = await term.inputField().promise
+  // const password = 'nikola'
 
   const storageFile = home + '/.lorena/data/' + username + '.json'
   const lorena = new Lorena({ storage: 'file', file: storageFile })
