@@ -23,7 +23,7 @@ const main = async () => {
   const conf = await lorena.loadConf(username, password)
   if (conf === false) {
     // First Time.
-    term.gray('Creating new connection')
+    term.cyan('Creating new connection')
     term.gray('\nConnection String :')
     const connString = await term.inputField().promise
     // const connString = 'Ygg7QhoNdbPmP1UTqnl22w-#-NDM2ZjZlNmU2NTYzNzQ2OTZmNmUyMDUzNzQ3MjY5NmU2Nw-#-jWDo3rHGqwMn3jnfRbBtNLmdsaC2UMzyura2dySL4Os-#-OKESp6vasShke5HVunTL5POsfEAyK33QnCDqzDGJKXFp_INhqkBaKM8i6ftlg1deyoZq6MMIaQUIZuEsFFjMNMGpRmYgtnOIKXFsJ9GhZ5kiV775EfeeXnwoh7o'
@@ -31,11 +31,25 @@ const main = async () => {
     term.gray('\nPIN :')
     const pin = await term.inputField().promise
     // const pin = '223447'
-    term.gray('\nCreate connection...')
+    term.cyan('\nOpen connection')
     await lorena.newClient(connString, pin, password)
+
+    // Connect
+    await lorena.connect()
+
+    // Do the handshake with the server
+    term.cyan('\nHandshake : get DID')
+    await lorena.handshake(threadId++)
+
+    // Save config.
+    term.cyan('\nSave config')
+    await lorena.saveConfig(password)
+  }
+  else {
+    await lorena.connect()
   }
 
-  lorena.connect()
+  
   lorena.on('error', (e) => {
     term('ERROR!!', e)
   })
@@ -83,7 +97,7 @@ const callRecipe = async (lorena, recipe, payload = {}) => {
 const terminal = async (lorena) => {
   let input, list
   const history = []
-  const autoComplete = ['ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list']
+  const autoComplete = ['info', 'ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list']
 
   term.magenta('lorena# ')
   term.on('key', function (name, matches, data) {
@@ -99,6 +113,10 @@ const terminal = async (lorena) => {
       term.gray('actions :\n')
       console.log(autoComplete)
       break
+    case 'info':
+        term.gray('info :\n')
+        console.log(lorena.info)
+        break
     case 'ping':
       await callRecipe(lorena, input)
       break

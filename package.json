@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@lorena-ssi/matrix-lib": "^1.0.9",
-    "@lorena-ssi/substrate-lib": "^1.0.3",
+    "@lorena-ssi/substrate-lib": "^1.0.4",
     "@lorena-ssi/zenroom-lib": "^1.4.5",
     "debug": "^4.1.1",
     "esm": "^3.2.25",

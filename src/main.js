@@ -76,6 +76,36 @@ export default class Lorena extends EventEmitter {
     })
   }
 
+  /**
+   * Encrypt and save configuration.
+   * @param {string} password 
+   */
+  async saveConfig(password) {
+    return new Promise((resolve) => {
+      const msg = JSON.stringify(this.info)
+      this.zenroom.encryptSymmetric(password, msg, 'local Storage')
+      .then((encryptedConf) => {
+        const confDir = path.dirname(this.opts.file)
+        if (this.opts.storage === 'file') {
+          fs.promises.mkdir(confDir, { recursive: true })
+          .then(() => {
+            fs.writeFileSync(this.opts.file, JSON.stringify(encryptedConf))
+            resolve(true)
+          })
+        } else {
+          //TODO: Save configuration for Browser (localCOnf)
+          resolve(false)
+        }
+      })
+    })
+  }
+
+  /**
+   * new Client.
+   * @param {string} connString Encrypted connection String
+   * @param {string} pin PIN
+   * @param {string} password Password to Store Configuration
+   */
   async newClient (connString, pin, password) {
     return new Promise((resolve) => {
       const conn = connString.split('-!-')
@@ -98,24 +128,7 @@ export default class Lorena extends EventEmitter {
         })
         .then((keyPair) => {
           this.info.keyPair = keyPair
-          const msg = JSON.stringify(this.info)
-          return this.zenroom.encryptSymmetric(password, msg, 'local Storage')
-        })
-        .then((encryptedConf) => {
-          const confDir = path.dirname(this.opts.file)
-          if (this.opts.storage === 'file') {
-            fs.promises.mkdir(confDir, { recursive: true })
-              .then(() => {
-                fs.writeFileSync(this.opts.file, JSON.stringify(encryptedConf))
-                resolve(this.info)
-              })
-              .catch((e) => {
-                console.log(e)
-                resolve(false)
-              })
-          } else {
-            resolve(false)
-          }
+          resolve(true)
         })
         .catch((e) => {
           console.log(e)
@@ -131,9 +144,7 @@ export default class Lorena extends EventEmitter {
     if (this.ready === true) return true
     try {
       await this.matrix.connect(this.info.matrixUser, this.info.matrixPass)
-      console.log('CONNECT')
       await this.blockchain.connect()
-      console.log('CONNECTED')
 
       // TODO: No need to store token in the database. Use in memory instead.
       const events = await this.matrix.events('')
@@ -256,12 +267,16 @@ export default class Lorena extends EventEmitter {
       this.blockchain.getActualDidKey(did)
         .then((key) => {
           pubKey[did] = { public_key: key }
+          console.log(did)
+          console.log(pubKey)
           return this.sendAction('contact-handshake', 0, 'handshake', threadId, { challenge: random })
         })
         .then(() => {
           return this.oneMsg('message:handshake')
         })
         .then(async (handshake) => {
+          console.log('Check signature')
+          console.log(pubKey)
           const check = await this.zenroom.checkSignature(did, pubKey, handshake.payload.signature, did)
           const buffer64 = Buffer.from(random).toString('base64').slice(0, -1)
           const signOk = (check.signature === 'correct') && (handshake.payload.signature[did].draft === buffer64)
@@ -277,6 +292,7 @@ export default class Lorena extends EventEmitter {
         })
         .then(async (received) => {
           console.log('new DID = ' + received.payload.did)
+          this.info.did = received.payload.did
           resolve(true)
         })
         .catch((e) => {
