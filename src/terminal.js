@@ -37,7 +37,7 @@ const main = async () => {
 
   lorena.connect()
   lorena.on('error', (e) => {
-    console.log('ERROR!!', e)
+    term('ERROR!!', e)
   })
   lorena.on('ready', async () => {
     term('^+connected^\n')
@@ -53,20 +53,26 @@ const main = async () => {
  * Calls a remote recipe.
  *
  * @param {object} lorena Lorena Object
- * @param {string} recipe Recipe id to be called
- * @param {*} thread Thread id calling the recipe
- * @param {*} payload Payload
+ * @param {string} recipe Recipe Ref to be called
+ * @param {object} payload Payload
  */
-const callRecipe = (lorena, recipe, thread, payload = {}) => {
-  const pingAction = {
-    recipe: recipe, // Local name for your process
-    recipeId: 0,
-    threadRef: thread, // Recipe we are calling to
-    threadId: threadId, // Local id  for your process
-    payload: payload
-  }
-  lorena.sendAction(pingAction.recipe, pingAction.recipeId, pingAction.threadRef, pingAction.threadId, pingAction.payload)
-  threadId++
+const callRecipe = async (lorena, recipe, payload = {}) => {
+  return new Promise((resolve, reject) => {
+    term.gray(recipe + '...')
+    lorena.sendAction(recipe, 0, recipe, threadId++, payload)
+      .then(() => {
+        return lorena.oneMsg('message:' + recipe)
+      })
+      .then((result) => {
+        const total = (Array.isArray(result.payload) ? result.payload.length : 1)
+        term('^+done^ - ' + total + ' results\n')
+        resolve(result.payload)
+      })
+      .catch((error) => {
+        term.gray(`^+${error.message}^\n`)
+        resolve(false)
+      })
+  })
 }
 
 /**
@@ -75,9 +81,9 @@ const callRecipe = (lorena, recipe, thread, payload = {}) => {
  * @param {object} lorena Lorena Obkect
  */
 const terminal = async (lorena) => {
-  let input
+  let input, list
   const history = []
-  const autoComplete = ['ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info', 'peer-add', 'peer-list']
+  const autoComplete = ['ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list']
 
   term.magenta('lorena# ')
   term.on('key', function (name, matches, data) {
@@ -87,79 +93,30 @@ const terminal = async (lorena) => {
     }
   })
   input = await term.inputField({ history: history, autoComplete: autoComplete, autoCompleteMenu: true }).promise
-  term.magenta('\n')
+  term('\n')
   switch (input) {
     case 'help':
       term.gray('actions :\n')
       console.log(autoComplete)
       break
     case 'ping':
-      term.gray('ping...')
-      callRecipe(lorena, 'ping', 'pong')
-      try {
-        await lorena.oneMsg('message:pong')
-        term('^+pong^\n')
-      } catch (error) {
-        term.gray(`^+${error.message}^\n`)
-      }
-      break
-    case 'ping-remote':
-      term.gray('DID : ')
-      input = await term.inputField().promise
-      term.gray('\nping remote...')
-      callRecipe(lorena, 'ping-remote', 'pong', { did: input })
-      try {
-        await lorena.oneMsg('message:pong')
-        term('^+pong^\n')
-      } catch (error) {
-        term.gray(`^+${error.message}^\n`)
-      }
-      break
-    case 'client-handshake':
-      term.gray('handshake...')
-      callRecipe(lorena, 'client-handshake', 'handshake', {})
-      try {
-        const list = await lorena.oneMsg('message:handshake')
-        term('^+done^\n')
-        console.log(list)
-      } catch (error) {
-        term.gray(`^+${error.message}^\n`)
-      }
+      await callRecipe(lorena, input)
       break
     case 'contact-list':
-      term.gray('getting list...')
-      callRecipe(lorena, 'contact-list', 'list')
-      try {
-        const list = await lorena.oneMsg('message:list')
-        term('^+done^\n')
-        console.log(list)
-      } catch (error) {
-        term.gray(`^+${error.message}^\n`)
-      }
+    case 'recipe-list':
+      list = await callRecipe(lorena, input)
+      console.log(list)
       break
+    case 'ping-remote':
     case 'contact-info':
       term.gray('DID : ')
       input = await term.inputField().promise
-      term.gray('\ngetting info...')
-      callRecipe(lorena, 'contact-info', 'info', { did: input })
-      try {
-        const info = await lorena.oneMsg('message:info')
-        term('^+done^\n')
-        console.log(info.payload)
-      } catch (error) {
-        term.gray(`^+${error.message}^\n`)
-      }
+      await callRecipe(lorena, input, { did: input })
       break
-    case 'peer-list':
-      term.gray('getting list...')
-      callRecipe(lorena, 'peer-list', 'list')
-      try {
-        const list = await lorena.oneMsg('message:list')
-        term('^+done^\n')
-        console.log(list)
-      } catch (error) {
-        term.gray(`^+${error.message}^\n`)
-      }
+    case 'contact-handshake':
+      term.gray('handshake...')
+      await lorena.handshake(threadId++)
+      term('^+done^\n')
       break
     case 'peer-add':
       input = {}
@@ -170,29 +127,15 @@ const terminal = async (lorena) => {
       term.gray('\nRole : ')
       var items = ['Admin', 'Developer', 'Business']
       input.role = await term.singleColumnMenu(items).promise
-      term.gray('\nAddin peer...')
-      callRecipe(lorena, 'peer-add', 'peer-add', input)
-      try {
-        await lorena.oneMsg('message:peer-add')
-        term('^+done^\n')
-      } catch (error) {
-        term.gray(`^+${error.message}^\n`)
-      }
+      await callRecipe(lorena, 'peer-add', 0, 'peer-add', threadId++, input)
       break
     case 'contact-add':
       term.gray('DID : ')
       input = await term.inputField().promise
-      term.gray('\nContacting...')
-      callRecipe(lorena, 'contact-add', 'add', {
+      await callRecipe(lorena, 'contact-add', 0, 'add', threadId++, {
         did: input,
         matrix: '@' + input + ':matrix.caelumlabs.com'
       })
-      try {
-        await lorena.oneMsg('message:add')
-        term('^+done^\n')
-      } catch (error) {
-        term.gray(`^+${error.message}^\n`)
-      }
       break
     case 'exit':
     case 'quit':

@@ -1,12 +1,16 @@
 import Matrix from '@lorena-ssi/matrix-lib'
 import Zenroom from '@lorena-ssi/zenroom-lib'
+import Blockchain from '@lorena-ssi/substrate-lib'
+
 import log from 'debug'
 import fs from 'fs'
 import path from 'path'
 import { EventEmitter } from 'events'
 
 const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix.caelumlabs.com'
+const BLOCKCHAIN_SERVER = process.env.SERVER ? process.env.SERVER : 'ws://127.0.0.1:9944'
 const debug = log('did:debug:cli')
+const error = log('did:error:cli')
 
 /**
  * Lorena SDK - Class
@@ -21,6 +25,7 @@ export default class Lorena extends EventEmitter {
     this.opts = opts
     if (opts.debug) debug.enabled = true
     this.info = {
+      name: '',
       matrixUser: '',
       matrixPass: '',
       did: '',
@@ -31,6 +36,7 @@ export default class Lorena extends EventEmitter {
 
     this.zenroom = new Zenroom()
     this.matrix = new Matrix(DEFAULT_SERVER)
+    this.blockchain = new Blockchain(BLOCKCHAIN_SERVER)
     this.recipeId = 0
     this.queue = []
     this.processing = false
@@ -72,11 +78,12 @@ export default class Lorena extends EventEmitter {
 
   async newClient (connString, pin, password) {
     return new Promise((resolve) => {
-      const conn = connString.split('-#-')
+      const conn = connString.split('-!-')
       const m = { secret_message: { checksum: conn[0], header: conn[1], iv: conn[2], text: conn[3] } }
       this.zenroom.decryptSymmetric(pin, m)
         .then((clientCode) => {
-          const client = clientCode.message.split('-')
+          console.log(clientCode)
+          const client = clientCode.message.split('-!-')
           this.info.matrixUser = client[0]
           this.info.matrixPass = client[1]
           this.info.did = client[2]
@@ -124,6 +131,9 @@ export default class Lorena extends EventEmitter {
     if (this.ready === true) return true
     try {
       await this.matrix.connect(this.info.matrixUser, this.info.matrixPass)
+      console.log('CONNECT')
+      await this.blockchain.connect()
+      console.log('CONNECTED')
 
       // TODO: No need to store token in the database. Use in memory instead.
       const events = await this.matrix.events('')
@@ -231,6 +241,49 @@ export default class Lorena extends EventEmitter {
       this.queue.push(action)
     }
     return this.recipeId
+  }
+
+  /**
+   * DOes the handshake
+   *
+   * @param {number} threadId Local Thread unique ID
+   */
+  async handshake (threadId) {
+    const did = this.info.did
+    const random = await this.zenroom.random()
+    const pubKey = {}
+    return new Promise((resolve, reject) => {
+      this.blockchain.getActualDidKey(did)
+        .then((key) => {
+          pubKey[did] = { public_key: key }
+          return this.sendAction('contact-handshake', 0, 'handshake', threadId, { challenge: random })
+        })
+        .then(() => {
+          return this.oneMsg('message:handshake')
+        })
+        .then(async (handshake) => {
+          const check = await this.zenroom.checkSignature(did, pubKey, handshake.payload.signature, did)
+          const buffer64 = Buffer.from(random).toString('base64').slice(0, -1)
+          const signOk = (check.signature === 'correct') && (handshake.payload.signature[did].draft === buffer64)
+          if (signOk) {
+            const signature = await this.zenroom.signMessage(did, this.info.keyPair, handshake.payload.challenge)
+            return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: signature, keyPair: this.info.keyPair, name: this.info.name })
+          } else {
+            return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: 'incorrect' })
+          }
+        })
+        .then(() => {
+          return this.oneMsg('message:handshake')
+        })
+        .then(async (received) => {
+          console.log('new DID = ' + received.payload.did)
+          resolve(true)
+        })
+        .catch((e) => {
+          error(e)
+          reject(new Error(e))
+        })
+    })
   }
 
   /**
