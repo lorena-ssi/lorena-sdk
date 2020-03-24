@@ -78,30 +78,32 @@ export default class Lorena extends EventEmitter {
 
   /**
    * Encrypt and save configuration.
-   * @param {string} password 
+   *
+   * @param {string} password Password to encrypt configuration
    */
-  async saveConfig(password) {
+  async saveConfig (password) {
     return new Promise((resolve) => {
       const msg = JSON.stringify(this.info)
       this.zenroom.encryptSymmetric(password, msg, 'local Storage')
-      .then((encryptedConf) => {
-        const confDir = path.dirname(this.opts.file)
-        if (this.opts.storage === 'file') {
-          fs.promises.mkdir(confDir, { recursive: true })
-          .then(() => {
-            fs.writeFileSync(this.opts.file, JSON.stringify(encryptedConf))
-            resolve(true)
-          })
-        } else {
-          //TODO: Save configuration for Browser (localCOnf)
-          resolve(false)
-        }
-      })
+        .then((encryptedConf) => {
+          const confDir = path.dirname(this.opts.file)
+          if (this.opts.storage === 'file') {
+            fs.promises.mkdir(confDir, { recursive: true })
+              .then(() => {
+                fs.writeFileSync(this.opts.file, JSON.stringify(encryptedConf))
+                resolve(true)
+              })
+          } else {
+          // TODO: Save configuration for Browser (localCOnf)
+            resolve(false)
+          }
+        })
     })
   }
 
   /**
    * new Client.
+   *
    * @param {string} connString Encrypted connection String
    * @param {string} pin PIN
    * @param {string} password Password to Store Configuration

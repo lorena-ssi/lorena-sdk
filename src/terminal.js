@@ -44,12 +44,10 @@ const main = async () => {
     // Save config.
     term.cyan('\nSave config')
     await lorena.saveConfig(password)
-  }
-  else {
+  } else {
     await lorena.connect()
   }
 
-  
   lorena.on('error', (e) => {
     term('ERROR!!', e)
   })
@@ -114,9 +112,9 @@ const terminal = async (lorena) => {
       console.log(autoComplete)
       break
     case 'info':
-        term.gray('info :\n')
-        console.log(lorena.info)
-        break
+      term.gray('info :\n')
+      console.log(lorena.info)
+      break
     case 'ping':
       await callRecipe(lorena, input)
       break
