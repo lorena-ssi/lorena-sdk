@@ -48,8 +48,7 @@ export default class Wallet {
   /**
    * Encrypt and save configuration.
    *
-   * @param {string} password Password to encrypt configuration
-   * @param {object} info info to lock
+   * @param {string} password Password to encrypt configurationnfo to lock
    */
   async lock (password) {
     return new Promise((resolve) => {
