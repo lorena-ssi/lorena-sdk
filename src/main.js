@@ -1,6 +1,8 @@
 import Matrix from '@lorena-ssi/matrix-lib'
 import Blockchain from '@lorena-ssi/substrate-lib'
-import Zenroom from '@lorena-ssi/zenroom-lib'
+
+// import Credential from '@lorena-ssi/credential-lib'
+
 import log from 'debug'
 import { EventEmitter } from 'events'
 
@@ -23,7 +25,6 @@ export default class Lorena extends EventEmitter {
     if (opts.debug) debug.enabled = true
 
     this.wallet = walletHandler
-    this.zenroom = new Zenroom()
     this.matrix = new Matrix(DEFAULT_SERVER)
     this.blockchain = new Blockchain(BLOCKCHAIN_SERVER)
     this.recipeId = 0
@@ -235,6 +236,7 @@ export default class Lorena extends EventEmitter {
         .then(async (received) => {
           console.log('new DID = ' + received.payload.did)
           this.wallet.info.did = received.payload.did
+
           resolve(true)
         })
         .catch((e) => {

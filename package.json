@@ -1,6 +1,6 @@
 {
   "name": "@lorena-ssi/lorena-cli",
-  "version": "1.0.12",
+  "version": "1.1.0",
   "description": "Lorena Client",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "MIT",
@@ -23,6 +23,7 @@
     }
   },
   "dependencies": {
+    "@lorena-ssi/credential-lib": "^1.0.0",
     "@lorena-ssi/matrix-lib": "^1.0.9",
     "@lorena-ssi/substrate-lib": "^1.0.4",
     "@lorena-ssi/zenroom-lib": "^1.4.5",
