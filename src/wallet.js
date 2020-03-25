@@ -57,16 +57,11 @@ export default class Wallet {
       this.zenroom.encryptSymmetric(password, msg, 'local Storage')
         .then((encryptedConf) => {
           const confDir = path.dirname(this.filePath)
-          if (this.opts.storage === 'file') {
-            fs.promises.mkdir(confDir, { recursive: true })
-              .then(() => {
-                fs.writeFileSync(this.filePath, JSON.stringify(encryptedConf))
-                resolve(true)
-              })
-          } else {
-          // TODO: Save configuration for Browser (localCOnf)
-            resolve(false)
-          }
+          fs.promises.mkdir(confDir, { recursive: true })
+            .then(() => {
+              fs.writeFileSync(this.filePath, JSON.stringify(encryptedConf))
+              resolve(true)
+            })
         })
     })
   }
