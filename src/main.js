@@ -1,6 +1,7 @@
 import Matrix from '@lorena-ssi/matrix-lib'
 import Zenroom from '@lorena-ssi/zenroom-lib'
 import Blockchain from '@lorena-ssi/substrate-lib'
+// import Credential from '@lorena-ssi/credential-lib'
 
 import log from 'debug'
 import fs from 'fs'
@@ -31,7 +32,8 @@ export default class Lorena extends EventEmitter {
       did: '',
       roomId: '',
       keyPair: {},
-      nextBatch: ''
+      nextBatch: '',
+      credential: {}
     }
 
     this.zenroom = new Zenroom()
@@ -293,8 +295,8 @@ export default class Lorena extends EventEmitter {
           return this.oneMsg('message:handshake')
         })
         .then(async (received) => {
-          console.log('new DID = ' + received.payload.did)
           this.info.did = received.payload.did
+          this.info.credential = received.payload.credential
           resolve(true)
         })
         .catch((e) => {
