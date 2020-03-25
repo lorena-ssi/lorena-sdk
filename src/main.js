@@ -1,4 +1,5 @@
 import Matrix from '@lorena-ssi/matrix-lib'
+import Zenroom from '@lorena-ssi/zenroom-lib'
 import Blockchain from '@lorena-ssi/substrate-lib'
 
 // import Credential from '@lorena-ssi/credential-lib'
@@ -23,7 +24,7 @@ export default class Lorena extends EventEmitter {
     super()
     this.opts = opts
     if (opts.debug) debug.enabled = true
-
+    this.zenroom = new Zenroom()
     this.wallet = walletHandler
     this.matrix = new Matrix(DEFAULT_SERVER)
     this.blockchain = new Blockchain(BLOCKCHAIN_SERVER)
