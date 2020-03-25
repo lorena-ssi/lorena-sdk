@@ -1,0 +1,73 @@
+import Zenroom from '@lorena-ssi/zenroom-lib'
+import fs from 'fs'
+import path from 'path'
+const os = require('os')
+const home = os.homedir()
+
+export default class Wallet {
+  constructor (username) {
+    this.filePath = home + '/.lorena/data/' + username + '.json'
+    this.zenroom = new Zenroom()
+    // info
+    this.info = {
+      name: '',
+      matrixUser: '',
+      matrixPass: '',
+      did: '',
+      roomId: '',
+      keyPair: {},
+      credential: {}
+    }
+  }
+
+  /**
+   *
+   * @param {string} password Pass
+   */
+  async unlock (password) {
+    return new Promise((resolve) => {
+      if (fs.existsSync(this.filePath)) {
+        fs.readFile(this.filePath, 'utf8', (err, data) => {
+          if (err) {
+            resolve(false)
+          }
+          const secret = JSON.parse(data)
+          console.log('secret', secret)
+          this.zenroom.decryptSymmetric(password, secret)
+            .then((clientCode) => {
+              this.info = JSON.parse(clientCode.message)
+              resolve(this.info)
+            })
+        })
+      } else {
+        resolve(false)
+      }
+    })
+  }
+
+  /**
+   * Encrypt and save configuration.
+   *
+   * @param {string} password Password to encrypt configuration
+   * @param {object} info info to lock
+   */
+  async lock (password, info) {
+    return new Promise((resolve) => {
+      const msg = JSON.stringify(info)
+      this.zenroom.encryptSymmetric(password, msg, 'local Storage')
+        .then((encryptedConf) => {
+          const confDir = path.dirname(this.filePath)
+          if (this.opts.storage === 'file') {
+            fs.promises.mkdir(confDir, { recursive: true })
+              .then(() => {
+                fs.writeFileSync(this.filePath, JSON.stringify(encryptedConf))
+                resolve(true)
+              })
+          } else {
+          // TODO: Save configuration for Browser (localCOnf)
+            resolve(false)
+          }
+        })
+    })
+  }
+}

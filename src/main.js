@@ -1,10 +1,7 @@
 import Matrix from '@lorena-ssi/matrix-lib'
-import Zenroom from '@lorena-ssi/zenroom-lib'
 import Blockchain from '@lorena-ssi/substrate-lib'
-
+import Zenroom from '@lorena-ssi/zenroom-lib'
 import log from 'debug'
-import fs from 'fs'
-import path from 'path'
 import { EventEmitter } from 'events'
 
 const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix.caelumlabs.com'
@@ -17,23 +14,15 @@ const error = log('did:error:cli')
  */
 export default class Lorena extends EventEmitter {
   /**
-   *
-   * @param {object} opts Options
+   * @param {object} walletHandler walletHandler
+   * @param {object} opts opts
    */
-  constructor (opts = { storage: 'localStorage' }) {
+  constructor (walletHandler, opts) {
     super()
     this.opts = opts
     if (opts.debug) debug.enabled = true
-    this.info = {
-      name: '',
-      matrixUser: '',
-      matrixPass: '',
-      did: '',
-      roomId: '',
-      keyPair: {},
-      nextBatch: ''
-    }
 
+    this.wallet = walletHandler
     this.zenroom = new Zenroom()
     this.matrix = new Matrix(DEFAULT_SERVER)
     this.blockchain = new Blockchain(BLOCKCHAIN_SERVER)
@@ -41,64 +30,15 @@ export default class Lorena extends EventEmitter {
     this.queue = []
     this.processing = false
     this.ready = false
+    this.nextBatch = ''
   }
 
-  /**
-   *
-   * @param {string} username User name
-   * @param {string} password Pass
-   */
-  async loadConf (username, password) {
-    this.info.name = username
-    return new Promise((resolve) => {
-      if (this.opts.storage === 'localStorage') {
-        console.log('TODO: Not implemented Yet')
-        resolve(false)
-      } else if (this.opts.storage === 'file') {
-        if (fs.existsSync(this.opts.file)) {
-          fs.readFile(this.opts.file, 'utf8', (err, data) => {
-            if (err) {
-              resolve(false)
-            }
-            const secret = JSON.parse(data)
-            this.zenroom.decryptSymmetric(password, secret)
-              .then((clientCode) => {
-                this.info = JSON.parse(clientCode.message)
-                resolve(this.info)
-              })
-          })
-        } else {
-          resolve(false)
-        }
-      } else {
-        resolve(false)
-      }
-    })
+  lock (username, password) {
+    return this.wallet.lock(username, password)
   }
 
-  /**
-   * Encrypt and save configuration.
-   *
-   * @param {string} password Password to encrypt configuration
-   */
-  async saveConfig (password) {
-    return new Promise((resolve) => {
-      const msg = JSON.stringify(this.info)
-      this.zenroom.encryptSymmetric(password, msg, 'local Storage')
-        .then((encryptedConf) => {
-          const confDir = path.dirname(this.opts.file)
-          if (this.opts.storage === 'file') {
-            fs.promises.mkdir(confDir, { recursive: true })
-              .then(() => {
-                fs.writeFileSync(this.opts.file, JSON.stringify(encryptedConf))
-                resolve(true)
-              })
-          } else {
-          // TODO: Save configuration for Browser (localCOnf)
-            resolve(false)
-          }
-        })
-    })
+  unlock (password) {
+    return this.wallet.unlock(password)
   }
 
   /**
@@ -116,20 +56,20 @@ export default class Lorena extends EventEmitter {
         .then((clientCode) => {
           console.log(clientCode)
           const client = clientCode.message.split('-!-')
-          this.info.matrixUser = client[0]
-          this.info.matrixPass = client[1]
-          this.info.did = client[2]
-          return this.matrix.connect(this.info.matrixUser, this.info.matrixPass)
+          this.wallet.info.matrixUser = client[0]
+          this.wallet.info.matrixPass = client[1]
+          this.wallet.info.did = client[2]
+          return this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
         })
         .then(() => {
           return this.matrix.joinedRooms()
         })
         .then((rooms) => {
-          this.info.roomId = rooms[0]
-          return this.zenroom.newKeyPair(this.info.did)
+          this.wallet.info.roomId = rooms[0]
+          return this.zenroom.newKeyPair(this.wallet.info.did)
         })
         .then((keyPair) => {
-          this.info.keyPair = keyPair
+          this.wallet.info.keyPair = keyPair
           resolve(true)
         })
         .catch((e) => {
@@ -145,12 +85,12 @@ export default class Lorena extends EventEmitter {
   async connect () {
     if (this.ready === true) return true
     try {
-      await this.matrix.connect(this.info.matrixUser, this.info.matrixPass)
+      await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
       await this.blockchain.connect()
 
       // TODO: No need to store token in the database. Use in memory instead.
       const events = await this.matrix.events('')
-      this.info.nextBatch = events.nextBatch
+      this.nextBatch = events.nextBatch
       this.ready = true
       this.processQueue()
       this.emit('ready')
@@ -188,12 +128,12 @@ export default class Lorena extends EventEmitter {
    * get All maessages
    */
   async getMessages () {
-    let result = await this.matrix.events(this.info.nextBatch)
+    let result = await this.matrix.events(this.nextBatch)
     // If empty (try again)
     if (result.events.length === 0) {
-      result = await this.matrix.events(this.info.nextBatch)
+      result = await this.matrix.events(this.nextBatch)
     }
-    this.info.nextBatch = result.nextBatch
+    this.nextBatch = result.nextBatch
     return (result.events)
   }
 
@@ -249,7 +189,7 @@ export default class Lorena extends EventEmitter {
     if (!this.processing && this.ready) { // execute just in time
       this.processing = true
       const sendPayload = JSON.stringify(action)
-      await this.matrix.sendMessage(this.info.roomId, 'm.action', sendPayload)
+      await this.matrix.sendMessage(this.wallet.info.roomId, 'm.action', sendPayload)
     } else {
       this.queue.push(action)
     }
@@ -262,7 +202,7 @@ export default class Lorena extends EventEmitter {
    * @param {number} threadId Local Thread unique ID
    */
   async handshake (threadId) {
-    const did = this.info.did
+    const did = this.wallet.info.did
     const random = await this.zenroom.random()
     const pubKey = {}
     return new Promise((resolve, reject) => {
@@ -283,8 +223,8 @@ export default class Lorena extends EventEmitter {
           const buffer64 = Buffer.from(random).toString('base64').slice(0, -1)
           const signOk = (check.signature === 'correct') && (handshake.payload.signature[did].draft === buffer64)
           if (signOk) {
-            const signature = await this.zenroom.signMessage(did, this.info.keyPair, handshake.payload.challenge)
-            return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: signature, keyPair: this.info.keyPair, name: this.info.name })
+            const signature = await this.zenroom.signMessage(did, this.wallet.info.keyPair, handshake.payload.challenge)
+            return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: signature, keyPair: this.wallet.info.keyPair, name: this.wallet.info.name })
           } else {
             return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: 'incorrect' })
           }
@@ -294,7 +234,7 @@ export default class Lorena extends EventEmitter {
         })
         .then(async (received) => {
           console.log('new DID = ' + received.payload.did)
-          this.info.did = received.payload.did
+          this.wallet.info.did = received.payload.did
           resolve(true)
         })
         .catch((e) => {

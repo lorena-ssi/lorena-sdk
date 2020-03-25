@@ -1,9 +1,16 @@
 #!/usr/bin/env node
+import Wallet from './wallet'
 var term = require('terminal-kit').terminal
-const os = require('os')
-const home = os.homedir()
 const Lorena = require('../src/index.js').default
+
 let threadId = 0
+
+term.on('key', function (name, matches, data) {
+  if (name === 'CTRL_C') {
+    term.grabInput(false)
+    setTimeout(function () { process.exit() }, 100)
+  }
+})
 
 term.magenta('Lorena ^+Client^\n')
 
@@ -15,12 +22,11 @@ const main = async () => {
   term.gray('\nPassword :')
   const password = await term.inputField().promise
   // const password = 'nikola'
-
-  const storageFile = home + '/.lorena/data/' + username + '.json'
-  const lorena = new Lorena({ storage: 'file', file: storageFile })
+  const wallet = new Wallet(username)
+  const lorena = new Lorena(wallet, { debug: true })
   term.gray('\nConnecting...')
   // get basic configuration
-  const conf = await lorena.loadConf(username, password)
+  const conf = await lorena.unlock(password)
   if (conf === false) {
     // First Time.
     term.cyan('Creating new connection')
@@ -98,12 +104,6 @@ const terminal = async (lorena) => {
   const autoComplete = ['info', 'ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list']
 
   term.magenta('lorena# ')
-  term.on('key', function (name, matches, data) {
-    if (name === 'CTRL_C') {
-      term.grabInput(false)
-      setTimeout(function () { process.exit() }, 100)
-    }
-  })
   input = await term.inputField({ history: history, autoComplete: autoComplete, autoCompleteMenu: true }).promise
   term('\n')
   switch (input) {
