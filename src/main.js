@@ -36,10 +36,12 @@ export default class Lorena extends EventEmitter {
   }
 
   lock (password) {
+    this.emit('lock', password)
     return this.wallet.lock(password)
   }
 
   unlock (password) {
+    this.emit('unlock', password)
     return this.wallet.unlock(password)
   }
 
