@@ -51,9 +51,9 @@ export default class Wallet {
    * @param {string} password Password to encrypt configuration
    * @param {object} info info to lock
    */
-  async lock (password, info) {
+  async lock (password) {
     return new Promise((resolve) => {
-      const msg = JSON.stringify(info)
+      const msg = JSON.stringify(this.info)
       this.zenroom.encryptSymmetric(password, msg, 'local Storage')
         .then((encryptedConf) => {
           const confDir = path.dirname(this.filePath)

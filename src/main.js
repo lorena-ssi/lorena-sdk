@@ -35,8 +35,8 @@ export default class Lorena extends EventEmitter {
     this.nextBatch = ''
   }
 
-  lock (username, password) {
-    return this.wallet.lock(username, password)
+  lock (password) {
+    return this.wallet.lock(password)
   }
 
   unlock (password) {

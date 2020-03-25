@@ -49,7 +49,7 @@ const main = async () => {
 
     // Save config.
     term.cyan('\nSave config')
-    await lorena.saveConfig(password)
+    await lorena.lock(password)
   } else {
     await lorena.connect()
   }
