@@ -10,13 +10,13 @@ export default class Wallet {
     this.zenroom = new Zenroom()
     // info
     this.info = {
-      name: '',
       matrixUser: '',
       matrixPass: '',
       did: '',
       roomId: '',
       keyPair: {},
-      credential: {}
+      credential: {},
+      contacts: []
     }
   }
 
@@ -34,7 +34,8 @@ export default class Wallet {
           const secret = JSON.parse(data)
           this.zenroom.decryptSymmetric(password, secret)
             .then((clientCode) => {
-              this.info = JSON.parse(clientCode.message)
+              const buff = Buffer.from(clientCode.message, 'base64')
+              this.info = JSON.parse(buff.toString())
               resolve(this.info)
             })
         })
@@ -51,8 +52,10 @@ export default class Wallet {
    */
   async lock (password) {
     return new Promise((resolve) => {
+      this.info.changed = false
       const msg = JSON.stringify(this.info)
-      this.zenroom.encryptSymmetric(password, msg, 'local Storage')
+      const buff = Buffer.from(msg)
+      this.zenroom.encryptSymmetric(password, buff.toString('base64'), 'local Storage')
         .then((encryptedConf) => {
           const confDir = path.dirname(this.filePath)
           fs.promises.mkdir(confDir, { recursive: true })
@@ -61,6 +64,28 @@ export default class Wallet {
               resolve(true)
             })
         })
+        .catch((e) => {
+          console.log(e)
+        })
     })
+  }
+
+  addContact (roomId, matrixUser, status) {
+    this.info.changed = true
+    if (!this.info.contacts) {
+      this.info.contacts = {}
+    }
+    this.info.contacts[roomId] = {
+      alias: '',
+      did: '',
+      didMethod: '',
+      matrixUser: matrixUser,
+      status: status
+    }
+  }
+
+  updateContact (roomId, key, value) {
+    this.info.changed = true
+    this.info.contacts[roomId][key] = value
   }
 }

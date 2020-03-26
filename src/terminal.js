@@ -173,16 +173,29 @@ const terminal = async (lorena, wallet) => {
       await callRecipe(lorena, 'peer-add', 0, 'peer-add', threadId++, input)
       break
     case 'contact-add':
+      payload = {}
       term.gray('DID : ')
-      input = await term.inputField().promise
-      await callRecipe(lorena, 'contact-add', 0, 'add', threadId++, {
-        did: input,
-        matrix: '@' + input + ':matrix.caelumlabs.com'
-      })
+      // payload.did = await term.inputField().promise
+      term.gray('\nmatrix : ')
+      // payload.matrix = await term.inputField().promise
+      term.gray('\n')
+
+      payload.did = 'ckc0Tzk0Ulk4enhtV0tRN3k4am1nMkRqmatrix'
+      payload.matrix = '@fhfzp1-2ffrf0xe2:matrix.caelumlabs.com'
+
+      term.gray('\n')
+      await lorena.createConnection(payload.matrix, payload.did)
+
       break
     case 'exit':
     case 'quit':
     case 'q':
+      if (lorena.wallet.info.changed === true) {
+        term.gray('\nChanges to the conf file')
+        term.gray('\npassword : ')
+        payload = await term.inputField().promise
+        lorena.lock(payload)
+      }
       process.exit()
   }
   terminal(lorena, wallet)

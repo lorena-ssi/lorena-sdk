@@ -121,15 +121,30 @@ export default class Lorena extends EventEmitter {
    * Loop through received messages.
    */
   async loop () {
+    let parsedElement
     while (true) {
       const events = await this.getMessages()
       this.processQueue()
 
-      events.forEach(element => {
+      events.forEach(async (element) => {
         try {
-          const parsedElement = JSON.parse(element.payload.body)
-          this.emit(`message:${parsedElement.recipe}`, parsedElement)
-          this.emit('message', parsedElement)
+          switch (element.type) {
+            case 'contact-incoming':
+              this.emit('contact-incoming', element.sender)
+              this.wallet.addContact(element.roomId, element.sender, 'connected')
+              await this.matrix.acceptConnection(element.roomId)
+              break
+            case 'contact-add':
+              this.emit('contact-added', element.sender)
+              this.wallet.updateContact(element.roomId, 'status', 'connected')
+              // await this.matrix.acceptConnection(element.roomId)
+              break
+            default:
+              parsedElement = JSON.parse(element.payload.body)
+              this.emit(`message:${parsedElement.recipe}`, parsedElement)
+              this.emit('message', parsedElement)
+              break
+          }
         } catch (_e) {
           console.log(_e)
           this.emit('warning', 'element unknown')
@@ -252,6 +267,22 @@ export default class Lorena extends EventEmitter {
         .catch((e) => {
           error(e)
           reject(new Error(e))
+        })
+    })
+  }
+
+  /**
+   * Open Connection wit a another user.
+   *
+   * @param {string} userId Matrix user ID
+   */
+  async createConnection (userId) {
+    const roomName = await this.zenroom.random()
+    return new Promise((resolve, reject) => {
+      this.matrix.createConnection(roomName, userId)
+        .then((roomId) => {
+          this.wallet.addContact(roomId, userId, 'invited')
+          resolve()
         })
     })
   }
