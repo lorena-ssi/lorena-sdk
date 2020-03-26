@@ -7,8 +7,6 @@ import Blockchain from '@lorena-ssi/substrate-lib'
 import log from 'debug'
 import { EventEmitter } from 'events'
 
-const DEFAULT_SERVER = process.env.SERVER ? process.env.SERVER : 'https://matrix.caelumlabs.com'
-const BLOCKCHAIN_SERVER = process.env.SERVER ? process.env.SERVER : 'ws://127.0.0.1:9944'
 const debug = log('did:debug:cli')
 const error = log('did:error:cli')
 
@@ -26,8 +24,8 @@ export default class Lorena extends EventEmitter {
     if (opts.debug) debug.enabled = true
     this.zenroom = new Zenroom()
     this.wallet = walletHandler
-    this.matrix = new Matrix(DEFAULT_SERVER)
-    this.blockchain = new Blockchain(BLOCKCHAIN_SERVER)
+    this.matrix = false
+    this.blockchain = false
     this.recipeId = 0
     this.queue = []
     this.processing = false
@@ -60,9 +58,14 @@ export default class Lorena extends EventEmitter {
         .then((clientCode) => {
           const client = clientCode.message.split('-!-')
           this.wallet.info.username = username
-          this.wallet.info.matrixUser = client[0]
+          const matrix = client[0].split(':')
+          this.wallet.info.matrixUser = matrix[0].substr(1)
+          this.wallet.info.matrixServer = 'https://' + matrix[1]
+          this.wallet.info.matrixFederation = ':' + matrix[1]
           this.wallet.info.matrixPass = client[1]
           this.wallet.info.did = client[2]
+          this.wallet.info.blockchainServer = client[3]
+          this.matrix = new Matrix(this.wallet.info.matrixServer)
           return this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
         })
         .then(() => {
@@ -92,8 +95,11 @@ export default class Lorena extends EventEmitter {
   async connect () {
     if (this.ready === true) return true
     try {
+      this.matrix = new Matrix(this.wallet.info.matrixServer)
       const token = await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
       debug('Token', token)
+
+      this.blockchain = new Blockchain(this.wallet.info.blockchainServer)
       await this.blockchain.connect()
 
       // TODO: No need to store token in the database. Use in memory instead.
@@ -239,6 +245,7 @@ export default class Lorena extends EventEmitter {
         })
         .then(async (received) => {
           this.wallet.info.did = received.payload.did
+          this.wallet.info.didMethod = received.payload.didMethod
           this.wallet.info.credential = received.payload.credential
           resolve(true)
         })
