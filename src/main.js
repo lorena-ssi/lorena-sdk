@@ -36,10 +36,12 @@ export default class Lorena extends EventEmitter {
   }
 
   lock (password) {
+    this.emit('lock', password)
     return this.wallet.lock(password)
   }
 
   unlock (password) {
+    this.emit('unlock', password)
     return this.wallet.unlock(password)
   }
 
@@ -90,7 +92,8 @@ export default class Lorena extends EventEmitter {
   async connect () {
     if (this.ready === true) return true
     try {
-      await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
+      const token = await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
+      debug('Token', token)
       await this.blockchain.connect()
 
       // TODO: No need to store token in the database. Use in memory instead.
@@ -148,7 +151,7 @@ export default class Lorena extends EventEmitter {
   async processQueue () {
     if (this.queue.length > 0) {
       const sendPayload = JSON.stringify(this.queue.pop())
-      await this.matrix.sendMessage(this.roomId, 'm.action', sendPayload)
+      await this.matrix.sendMessage(this.wallet.info.roomId, 'm.action', sendPayload)
     }
     if (this.queue.length === 0) {
       this.processing = false
