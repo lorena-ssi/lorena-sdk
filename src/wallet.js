@@ -32,7 +32,6 @@ export default class Wallet {
             resolve(false)
           }
           const secret = JSON.parse(data)
-          console.log('secret', secret)
           this.zenroom.decryptSymmetric(password, secret)
             .then((clientCode) => {
               this.info = JSON.parse(clientCode.message)

@@ -38,7 +38,7 @@ const main = async () => {
     const pin = await term.inputField().promise
     // const pin = '223447'
     term.cyan('\nOpen connection')
-    await lorena.newClient(connString, pin, password)
+    await lorena.newClient(connString, pin, username)
 
     // Connect
     await lorena.connect()
@@ -59,7 +59,7 @@ const main = async () => {
   })
   lorena.on('ready', async () => {
     term('^+connected^\n')
-    terminal(lorena)
+    terminal(lorena, wallet)
   })
 
   lorena.on('message:pong', (payload) => {
@@ -98,10 +98,10 @@ const callRecipe = async (lorena, recipe, payload = {}) => {
  *
  * @param {object} lorena Lorena Obkect
  */
-const terminal = async (lorena) => {
-  let input, list
+const terminal = async (lorena, wallet) => {
+  let input, list, payload
   const history = []
-  const autoComplete = ['info', 'ping', 'ping-remote', 'contact-list', 'exit', 'help', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list']
+  const autoComplete = ['info', 'exit', 'help', 'pubkey', 'ping', 'ping-remote', 'ping-admin', 'contact-list', 'contact-invite', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list']
 
   term.magenta('lorena# ')
   input = await term.inputField({ history: history, autoComplete: autoComplete, autoCompleteMenu: true }).promise
@@ -113,12 +113,36 @@ const terminal = async (lorena) => {
       break
     case 'info':
       term.gray('info :\n')
-      console.log(lorena.info)
+      console.log(wallet.info)
+      break
+    case 'pubkey':
+      term.gray('Public Key :\n')
+      console.log(wallet.info.keyPair[wallet.info.username].keypair.public_key)
+      break
+    case 'contact-invite':
+      payload = {}
+      term.gray('First Name : ')
+      payload.givenName = await term.inputField().promise
+      term.gray('\nLast Name 1: ')
+      payload.familyName = await term.inputField().promise
+      term.gray('\nLast Name 2: ')
+      payload.additionalName = await term.inputField().promise
+      term.gray('\nDNI : ')
+      payload.propertyID = await term.inputField().promise
+      term.gray('\nTelephone : ')
+      payload.telephone = await term.inputField().promise
+      term.gray('\n')
+      list = await callRecipe(lorena, input, payload)
+      console.log(list)
       break
     case 'ping':
+    case 'ping-admin':
       await callRecipe(lorena, input)
       break
     case 'contact-list':
+      list = await callRecipe(lorena, input, {filter:'all'})
+      console.log(list)
+      break
     case 'recipe-list':
       list = await callRecipe(lorena, input)
       console.log(list)
@@ -126,8 +150,10 @@ const terminal = async (lorena) => {
     case 'ping-remote':
     case 'contact-info':
       term.gray('DID : ')
-      input = await term.inputField().promise
-      await callRecipe(lorena, input, { did: input })
+      payload = await term.inputField().promise
+      term('\n')
+      list = await callRecipe(lorena, input, { did: payload })
+      console.log(list)
       break
     case 'contact-handshake':
       term.gray('handshake...')
@@ -158,7 +184,7 @@ const terminal = async (lorena) => {
     case 'q':
       process.exit()
   }
-  terminal(lorena)
+  terminal(lorena, wallet)
 }
 
 main()

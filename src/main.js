@@ -48,27 +48,30 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} connString Encrypted connection String
    * @param {string} pin PIN
-   * @param {string} password Password to Store Configuration
+   * @param {string} username Username
    */
-  async newClient (connString, pin, password) {
+  async newClient (connString, pin, username) {
     return new Promise((resolve) => {
       const conn = connString.split('-!-')
       const m = { secret_message: { checksum: conn[0], header: conn[1], iv: conn[2], text: conn[3] } }
       this.zenroom.decryptSymmetric(pin, m)
         .then((clientCode) => {
-          console.log(clientCode)
           const client = clientCode.message.split('-!-')
+          this.wallet.info.username = username
           this.wallet.info.matrixUser = client[0]
           this.wallet.info.matrixPass = client[1]
           this.wallet.info.did = client[2]
           return this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
         })
         .then(() => {
-          return this.matrix.joinedRooms()
+          return this.matrix.events('')
         })
-        .then((rooms) => {
-          this.wallet.info.roomId = rooms[0]
-          return this.zenroom.newKeyPair(this.wallet.info.did)
+        .then((result) => {
+          this.wallet.info.roomId = result.events[0].roomId
+          return this.matrix.acceptConnection(result.events[0].roomId)
+        })
+        .then(() => {
+          return this.zenroom.newKeyPair(username)
         })
         .then((keyPair) => {
           this.wallet.info.keyPair = keyPair
@@ -205,28 +208,25 @@ export default class Lorena extends EventEmitter {
    */
   async handshake (threadId) {
     const did = this.wallet.info.did
+    const username = this.wallet.info.username
     const random = await this.zenroom.random()
     const pubKey = {}
     return new Promise((resolve, reject) => {
       this.blockchain.getActualDidKey(did)
         .then((key) => {
           pubKey[did] = { public_key: key }
-          console.log(did)
-          console.log(pubKey)
           return this.sendAction('contact-handshake', 0, 'handshake', threadId, { challenge: random })
         })
         .then(() => {
           return this.oneMsg('message:handshake')
         })
         .then(async (handshake) => {
-          console.log('Check signature')
-          console.log(pubKey)
           const check = await this.zenroom.checkSignature(did, pubKey, handshake.payload.signature, did)
           const buffer64 = Buffer.from(random).toString('base64').slice(0, -1)
           const signOk = (check.signature === 'correct') && (handshake.payload.signature[did].draft === buffer64)
           if (signOk) {
-            const signature = await this.zenroom.signMessage(did, this.wallet.info.keyPair, handshake.payload.challenge)
-            return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: signature, keyPair: this.wallet.info.keyPair, name: this.wallet.info.name })
+            const signature = await this.zenroom.signMessage(username, this.wallet.info.keyPair, handshake.payload.challenge)
+            return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: signature, keyPair: this.wallet.info.keyPair, username: username })
           } else {
             return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: 'incorrect' })
           }
@@ -235,9 +235,8 @@ export default class Lorena extends EventEmitter {
           return this.oneMsg('message:handshake')
         })
         .then(async (received) => {
-          console.log('new DID = ' + received.payload.did)
           this.wallet.info.did = received.payload.did
-
+          this.wallet.info.credential = received.payload.credential
           resolve(true)
         })
         .catch((e) => {
