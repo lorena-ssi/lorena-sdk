@@ -97,6 +97,7 @@ const callRecipe = async (lorena, recipe, payload = {}) => {
  * Opens the terminal
  *
  * @param {object} lorena Lorena Obkect
+ * @param {object} wallet Local information (wallet)
  */
 const terminal = async (lorena, wallet) => {
   let input, list, payload
@@ -140,7 +141,7 @@ const terminal = async (lorena, wallet) => {
       await callRecipe(lorena, input)
       break
     case 'contact-list':
-      list = await callRecipe(lorena, input, {filter:'all'})
+      list = await callRecipe(lorena, input, { filter: 'all' })
       console.log(list)
       break
     case 'recipe-list':
