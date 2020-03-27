@@ -18,7 +18,7 @@ export default class Lorena extends EventEmitter {
    * @param {object} walletHandler walletHandler
    * @param {object} opts opts
    */
-  constructor (walletHandler, opts) {
+  constructor (walletHandler, opts = {}) {
     super()
     this.opts = opts
     if (opts.debug) debug.enabled = true
