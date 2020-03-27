@@ -96,8 +96,7 @@ export default class Lorena extends EventEmitter {
     if (this.ready === true) return true
     try {
       this.matrix = new Matrix(this.wallet.info.matrixServer)
-      const token = await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
-      debug('Token', token)
+      await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
 
       this.blockchain = new Blockchain(this.wallet.info.blockchainServer)
       await this.blockchain.connect()
@@ -130,14 +129,27 @@ export default class Lorena extends EventEmitter {
         try {
           switch (element.type) {
             case 'contact-incoming':
-              this.emit('contact-incoming', element.sender)
-              this.wallet.addContact(element.roomId, element.sender, 'connected')
+              // add(collection, value)
+              this.wallet.add('contacts', {
+                roomId: element.roomId,
+                alias: '',
+                did: '',
+                didMethod: '',
+                matrixUser: element.sender,
+                status: 'incoming'
+              })
               await this.matrix.acceptConnection(element.roomId)
+              this.emit('contact-incoming', element.sender)
+              this.emit('change')
               break
             case 'contact-add':
-              this.emit('contact-added', element.sender)
-              this.wallet.updateContact(element.roomId, 'status', 'connected')
+              // update(collection, where, value) value can be partial
+              this.wallet.update('contacts', { roomId: element.roomId }, {
+                status: 'connected'
+              })
               // await this.matrix.acceptConnection(element.roomId)
+              this.emit('contact-added', element.sender)
+              this.emit('change')
               break
             default:
               parsedElement = JSON.parse(element.payload.body)
@@ -261,7 +273,7 @@ export default class Lorena extends EventEmitter {
         .then(async (received) => {
           this.wallet.info.did = received.payload.did
           this.wallet.info.didMethod = received.payload.didMethod
-          this.wallet.info.credential = received.payload.credential
+          this.wallet.add('credentials', received.payload.credential)
           resolve(true)
         })
         .catch((e) => {
@@ -274,14 +286,21 @@ export default class Lorena extends EventEmitter {
   /**
    * Open Connection wit a another user.
    *
-   * @param {string} userId Matrix user ID
+   * @param {string} matrixUser Matrix user ID
    */
-  async createConnection (userId) {
+  async createConnection (matrixUser) {
     const roomName = await this.zenroom.random()
     return new Promise((resolve, reject) => {
-      this.matrix.createConnection(roomName, userId)
+      this.matrix.createConnection(roomName, matrixUser)
         .then((roomId) => {
-          this.wallet.addContact(roomId, userId, 'invited')
+          this.wallet.add('contacts', {
+            roomId,
+            alias: '',
+            did: '',
+            didMethod: '',
+            matrixUser,
+            status: 'invited'
+          })
           resolve()
         })
     })

@@ -1,22 +1,48 @@
 import Zenroom from '@lorena-ssi/zenroom-lib'
-import fs from 'fs'
-import path from 'path'
+import { promises as fsPromises } from 'fs'
+
+import log from 'debug'
 const os = require('os')
 const home = os.homedir()
-
+const debug = log('did:debug:cli')
+debug.enabled = true
 export default class Wallet {
   constructor (username) {
-    this.filePath = home + '/.lorena/data/' + username + '.json'
+    this.directoryPath = `${home}/.lorena/wallets/${username}`
     this.zenroom = new Zenroom()
+    this.changed = false
     // info
     this.info = {
       matrixUser: '',
       matrixPass: '',
       did: '',
       roomId: '',
-      keyPair: {},
-      credential: {},
+      keyPair: {}
+    }
+    // data
+    this.data = {
+      credentials: [],
       contacts: []
+    }
+  }
+
+  async read (source) {
+    try {
+      debug('Reading', `${this.directoryPath}/${source}`)
+      const data = await fsPromises.readFile(`${this.directoryPath}/${source}`, 'utf-8')
+      return data
+    } catch (error) {
+      throw new Error(error)
+    }
+  }
+
+  async write (source, data) {
+    try {
+      await fsPromises.mkdir(this.directoryPath, { recursive: true })
+      await fsPromises.writeFile(`${this.directoryPath}/${source}`, data)
+      return true
+    } catch (error) {
+      return false
     }
   }
 
@@ -25,24 +51,20 @@ export default class Wallet {
    * @param {string} password Pass
    */
   async unlock (password) {
-    return new Promise((resolve) => {
-      if (fs.existsSync(this.filePath)) {
-        fs.readFile(this.filePath, 'utf8', (err, data) => {
-          if (err) {
-            resolve(false)
-          }
-          const secret = JSON.parse(data)
-          this.zenroom.decryptSymmetric(password, secret)
-            .then((clientCode) => {
-              const buff = Buffer.from(clientCode.message, 'base64')
-              this.info = JSON.parse(buff.toString())
-              resolve(this.info)
-            })
-        })
-      } else {
-        resolve(false)
-      }
-    })
+    try {
+      const info = await this.read('info')
+      const infoDecrypted = await this.zenroom.decryptSymmetric(password, JSON.parse(Buffer.from(info, 'base64').toString()))
+      this.info = JSON.parse(infoDecrypted.message)
+
+      const data = await this.read('data')
+      const dataDecrypted = await this.zenroom.decryptSymmetric(password, JSON.parse(Buffer.from(data, 'base64').toString()))
+      this.data = JSON.parse(dataDecrypted.message)
+      debug('Info %O', this.info)
+      debug('Data %O', this.data)
+      return true
+    } catch (_e) {
+      return false
+    }
   }
 
   /**
@@ -51,41 +73,38 @@ export default class Wallet {
    * @param {string} password Password to encrypt configuration
    */
   async lock (password) {
-    return new Promise((resolve) => {
-      this.info.changed = false
-      const msg = JSON.stringify(this.info)
-      const buff = Buffer.from(msg)
-      this.zenroom.encryptSymmetric(password, buff.toString('base64'), 'local Storage')
-        .then((encryptedConf) => {
-          const confDir = path.dirname(this.filePath)
-          fs.promises.mkdir(confDir, { recursive: true })
-            .then(() => {
-              fs.writeFileSync(this.filePath, JSON.stringify(encryptedConf))
-              resolve(true)
-            })
-        })
-        .catch((e) => {
-          console.log(e)
-        })
+    const infoEncrypted = await this.zenroom.encryptSymmetric(password, JSON.stringify(this.info), 'Wallet info')
+    await this.write('info', Buffer.from(JSON.stringify(infoEncrypted)).toString('base64'))
+    const dataEncrypted = await this.zenroom.encryptSymmetric(password, JSON.stringify(this.data), 'Wallet data')
+    await this.write('data', Buffer.from(JSON.stringify(dataEncrypted)).toString('base64'))
+    this.changed = false
+  }
+
+  add (collection, value) {
+    this.changed = true
+    if (typeof collection !== 'string') throw new Error('Collection should be a String')
+    if (typeof value !== 'object') throw new Error('Value should be an Object')
+    if (!this.data[collection]) this.data[collection] = []
+    this.data[collection].push(value)
+  }
+
+  update (collection, where, value) {
+    this.changed = true
+    if (typeof collection !== 'string') throw new Error('Collection should be a String')
+    if (typeof where !== 'object') throw new Error('Value should be an Object')
+    if (typeof value !== 'object') throw new Error('Value should be an Object')
+    const found = this.data[collection].filter((item, index) => {
+      let founded
+      Object.entries(where).forEach((searchterm) => {
+        if (item[searchterm[0]] === searchterm[1]) {
+          this.data[collection][index] = { ...this.data[collection][index], ...value }
+          founded = true
+        } else {
+          founded = false
+        }
+      })
+      return founded
     })
-  }
-
-  addContact (roomId, matrixUser, status) {
-    this.info.changed = true
-    if (!this.info.contacts) {
-      this.info.contacts = {}
-    }
-    this.info.contacts[roomId] = {
-      alias: '',
-      did: '',
-      didMethod: '',
-      matrixUser: matrixUser,
-      status: status
-    }
-  }
-
-  updateContact (roomId, key, value) {
-    this.info.changed = true
-    this.info.contacts[roomId][key] = value
+    return found.length > 0
   }
 }

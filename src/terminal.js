@@ -175,14 +175,9 @@ const terminal = async (lorena, wallet) => {
     case 'contact-add':
       payload = {}
       term.gray('DID : ')
-      // payload.did = await term.inputField().promise
+      payload.did = await term.inputField().promise
       term.gray('\nmatrix : ')
-      // payload.matrix = await term.inputField().promise
-      term.gray('\n')
-
-      payload.did = 'ckc0Tzk0Ulk4enhtV0tRN3k4am1nMkRqmatrix'
-      payload.matrix = '@fhfzp1-2ffrf0xe2:matrix.caelumlabs.com'
-
+      payload.matrix = await term.inputField().promise
       term.gray('\n')
       await lorena.createConnection(payload.matrix, payload.did)
 
@@ -190,11 +185,11 @@ const terminal = async (lorena, wallet) => {
     case 'exit':
     case 'quit':
     case 'q':
-      if (lorena.wallet.info.changed === true) {
+      if (lorena.wallet.changed === true) {
         term.gray('\nChanges to the conf file')
         term.gray('\npassword : ')
         payload = await term.inputField().promise
-        lorena.lock(payload)
+        await lorena.lock(payload)
       }
       process.exit()
   }
