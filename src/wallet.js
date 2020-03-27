@@ -9,7 +9,7 @@ debug.enabled = true
 export default class Wallet {
   constructor (username) {
     this.directoryPath = `${home}/.lorena/wallets/${username}`
-    this.zenroom = new Zenroom()
+    this.zenroom = new Zenroom(true)
     this.changed = false
     // info
     this.info = {
@@ -28,7 +28,7 @@ export default class Wallet {
 
   async read (source) {
     try {
-      debug('Reading', `${this.directoryPath}/${source}`)
+      // debug('Reading', `${this.directoryPath}/${source}`)
       const data = await fsPromises.readFile(`${this.directoryPath}/${source}`, 'utf-8')
       return data
     } catch (error) {
@@ -55,12 +55,11 @@ export default class Wallet {
       const info = await this.read('info')
       const infoDecrypted = await this.zenroom.decryptSymmetric(password, JSON.parse(Buffer.from(info, 'base64').toString()))
       this.info = JSON.parse(infoDecrypted.message)
-
       const data = await this.read('data')
       const dataDecrypted = await this.zenroom.decryptSymmetric(password, JSON.parse(Buffer.from(data, 'base64').toString()))
       this.data = JSON.parse(dataDecrypted.message)
-      debug('Info %O', this.info)
-      debug('Data %O', this.data)
+      // debug('Info %O', this.info)
+      // debug('Data %O', this.data)
       return true
     } catch (_e) {
       return false

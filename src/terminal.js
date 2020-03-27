@@ -62,8 +62,29 @@ const main = async () => {
     terminal(lorena, wallet)
   })
 
-  lorena.on('message:pong', (payload) => {
-    // term( '^+received ^\n' )
+  lorena.on('message:credential-get', async (payload) => {
+    term('\n^Is asking for a credential ^')
+    term('\n^Share Credential (Y/N) ^\n')
+    const shareCredential = await term.yesOrNo({ yes: ['y', 'ENTER'], no: ['n'] }).promise
+    if (shareCredential) {
+      const cred = lorena.wallet.data.credentials[0]
+      console.log(payload)
+      lorena.sendAction(payload.threadRef, payload.threadId, 'credential-get', 0, cred, payload.roomId)
+      term('\n^Credential Sent^\n')
+    }
+  })
+
+  lorena.on('message:credential-ask', async (payload) => {
+    term('\n^Received credential ^')
+    console.log(payload)
+  })
+
+  lorena.on('contact-incoming', (payload) => {
+    term('\n^+Contact invitation Incoming from ^' + payload + ' \n')
+  })
+
+  lorena.on('contact-added', (payload) => {
+    term('\n^+Contact invitation Accepted from ^' + payload + ' \n')
   })
 }
 
@@ -104,7 +125,7 @@ const terminal = async (lorena, wallet) => {
   const history = []
   const autoComplete = ['info', 'exit', 'help', 'pubkey', 'ping', 'ping-remote', 'ping-admin', 'contact-list', 'contact-invite', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list']
 
-  term.magenta('lorena# ')
+  term.cyan('lorena# ')
   input = await term.inputField({ history: history, autoComplete: autoComplete, autoCompleteMenu: true }).promise
   term('\n')
   switch (input) {
@@ -115,6 +136,14 @@ const terminal = async (lorena, wallet) => {
     case 'info':
       term.gray('info :\n')
       console.log(wallet.info)
+      break
+    case 'credentials':
+      term.gray('Credentials :\n')
+      console.log(wallet.data.credentials)
+      break
+    case 'contacts':
+      term.gray('Contacts :\n')
+      console.log(wallet.data.contacts)
       break
     case 'pubkey':
       term.gray('Public Key :\n')
@@ -181,6 +210,21 @@ const terminal = async (lorena, wallet) => {
       term.gray('\n')
       await lorena.createConnection(payload.matrix, payload.did)
 
+      break
+    case 'credential-get':
+      payload = {}
+      term.gray('RoomId : ')
+      payload.roomId = await term.inputField().promise
+      // term.gray('\nCredential (memberOf) : ')
+      // payload.credential = await term.inputField().promise
+      term.gray('\n')
+      await lorena.askCredential(payload.roomId, 'memberOf', threadId++)
+      break
+    case 'contact-del':
+      payload = {}
+      term.gray('RoomId : ')
+      payload = await term.inputField().promise
+      await lorena.deleteConnection(payload)
       break
     case 'exit':
     case 'quit':

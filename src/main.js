@@ -22,7 +22,7 @@ export default class Lorena extends EventEmitter {
     super()
     this.opts = opts
     if (opts.debug) debug.enabled = true
-    this.zenroom = new Zenroom()
+    this.zenroom = new Zenroom(true)
     this.wallet = walletHandler
     this.matrix = false
     this.blockchain = false
@@ -97,7 +97,6 @@ export default class Lorena extends EventEmitter {
     try {
       this.matrix = new Matrix(this.wallet.info.matrixServer)
       await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
-
       this.blockchain = new Blockchain(this.wallet.info.blockchainServer)
       await this.blockchain.connect()
 
@@ -148,11 +147,15 @@ export default class Lorena extends EventEmitter {
                 status: 'connected'
               })
               // await this.matrix.acceptConnection(element.roomId)
+              console.log('EMIT contact-added')
               this.emit('contact-added', element.sender)
+              console.log('EMIT change')
               this.emit('change')
               break
             default:
               parsedElement = JSON.parse(element.payload.body)
+              parsedElement.roomId = element.roomId
+              console.log('RECIPE : ' + parsedElement.recipe)
               this.emit(`message:${parsedElement.recipe}`, parsedElement)
               this.emit('message', parsedElement)
               break
@@ -218,8 +221,9 @@ export default class Lorena extends EventEmitter {
    * @param {string} threadRef Local Recipe name
    * @param {number} threadId Local recipr Id
    * @param {object} payload Information to send
+   * @param {string} roomId Contact to send recipe to
    */
-  async sendAction (recipe, recipeId, threadRef, threadId, payload) {
+  async sendAction (recipe, recipeId, threadRef, threadId, payload, roomId = false) {
     const action = {
       recipe,
       recipeId,
@@ -230,7 +234,8 @@ export default class Lorena extends EventEmitter {
     if (!this.processing && this.ready) { // execute just in time
       this.processing = true
       const sendPayload = JSON.stringify(action)
-      await this.matrix.sendMessage(this.wallet.info.roomId, 'm.action', sendPayload)
+      const sendTo = (roomId === false) ? this.wallet.info.roomId : roomId
+      await this.matrix.sendMessage(sendTo, 'm.action', sendPayload)
     } else {
       this.queue.push(action)
     }
@@ -287,18 +292,61 @@ export default class Lorena extends EventEmitter {
    * Open Connection wit a another user.
    *
    * @param {string} matrixUser Matrix user ID
+   * @param {string} did DID
    */
-  async createConnection (matrixUser) {
-    const roomName = await this.zenroom.random()
+  async createConnection (matrixUser, did) {
+    const roomName = await this.zenroom.random(12)
     return new Promise((resolve, reject) => {
       this.matrix.createConnection(roomName, matrixUser)
         .then((roomId) => {
           this.wallet.add('contacts', {
             roomId,
             alias: '',
-            did: '',
+            did: did,
             didMethod: '',
             matrixUser,
+            status: 'invited'
+          })
+          resolve()
+        })
+    })
+  }
+
+  /**
+   * Ask to a contact for a credential.
+   *
+   * @param {string} roomId Contact identifier
+   * @param {string} credentialType Credential we ask for.
+   * @param {number} threadId Local Thread.
+   */
+  async askCredential (roomId, credentialType, threadId) {
+    return new Promise((resolve) => {
+      const payload = {
+        credentialType: credentialType
+      }
+      this.sendAction('credential-get', 0, 'credential-ask', threadId, payload, roomId)
+        .then(() => {
+          console.log('ASKED')
+          resolve(true)
+        })
+    })
+  }
+
+  /**
+   * Delete a contact and leave the room for that contact.
+   *
+   * @param {string} roomId Contact to be removed
+   */
+  async deleteConnection (roomId) {
+    return new Promise((resolve) => {
+      this.matrix.leaveRoom(roomId)
+        .then((roomId) => {
+          this.wallet.add('contacts', {
+            roomId,
+            alias: '',
+            did: '',
+            didMethod: '',
+            matrixUser: '',
             status: 'invited'
           })
           resolve()
