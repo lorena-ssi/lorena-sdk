@@ -23,10 +23,10 @@
     }
   },
   "dependencies": {
-    "@lorena-ssi/credential-lib": "^1.0.0",
+    "@lorena-ssi/credential-lib": "^1.0.1",
     "@lorena-ssi/matrix-lib": "^1.0.9",
     "@lorena-ssi/substrate-lib": "^1.0.4",
-    "@lorena-ssi/zenroom-lib": "^1.4.6",
+    "@lorena-ssi/zenroom-lib": "^1.4.7",
     "debug": "^4.1.1",
     "esm": "^3.2.25",
     "inquirer": "^7.1.0",

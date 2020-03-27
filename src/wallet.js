@@ -7,7 +7,7 @@ const home = os.homedir()
 export default class Wallet {
   constructor (username) {
     this.filePath = home + '/.lorena/data/' + username + '.json'
-    this.zenroom = new Zenroom()
+    this.zenroom = new Zenroom(true)
     // info
     this.info = {
       matrixUser: '',

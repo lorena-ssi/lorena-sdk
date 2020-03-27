@@ -22,7 +22,7 @@ export default class Lorena extends EventEmitter {
     super()
     this.opts = opts
     if (opts.debug) debug.enabled = true
-    this.zenroom = new Zenroom()
+    this.zenroom = new Zenroom(true)
     this.wallet = walletHandler
     this.matrix = false
     this.blockchain = false
@@ -96,8 +96,8 @@ export default class Lorena extends EventEmitter {
     if (this.ready === true) return true
     try {
       this.matrix = new Matrix(this.wallet.info.matrixServer)
-      const token = await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
-      debug('Token', token)
+      await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
+      // debug('Token', token)
 
       this.blockchain = new Blockchain(this.wallet.info.blockchainServer)
       await this.blockchain.connect()
