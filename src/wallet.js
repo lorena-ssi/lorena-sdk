@@ -107,4 +107,23 @@ export default class Wallet {
     })
     return found.length > 0
   }
+
+  remove (collection, where) {
+    this.changed = true
+    if (typeof collection !== 'string') throw new Error('Collection should be a String')
+    if (typeof where !== 'object') throw new Error('Value should be an Object')
+    const found = this.data[collection].filter((item) => {
+      let founded
+      Object.entries(where).forEach((searchterm) => {
+        if (item[searchterm[0]] === searchterm[1]) {
+          founded = true
+        } else {
+          founded = false
+        }
+      })
+      return !founded
+    })
+    this.data[collection] = found
+    return found
+  }
 }
