@@ -167,7 +167,8 @@ const terminal = async (lorena, wallet) => {
       break
     case 'ping':
     case 'ping-admin':
-      await callRecipe(lorena, input)
+      list = await callRecipe(lorena, input)
+      console.log(list)
       break
     case 'contact-list':
       list = await callRecipe(lorena, input, { filter: 'all' })
