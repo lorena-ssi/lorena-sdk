@@ -23,7 +23,7 @@ const main = async () => {
   const password = await term.inputField().promise
   // const password = 'nikola'
   const wallet = new Wallet(username)
-  const lorena = new Lorena(wallet, { debug: true })
+  const lorena = new Lorena(wallet, { debug: true, silent: true })
   term.gray('\nConnecting...')
   // get basic configuration
   const conf = await lorena.unlock(password)
