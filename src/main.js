@@ -245,9 +245,10 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * DOes the handshake
+   * Does the handshake
    *
    * @param {number} threadId Local Thread unique ID
+   * @returns {boolean} result
    */
   async handshake (threadId) {
     const did = this.wallet.info.did
@@ -291,7 +292,7 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * Open Connection wit a another user.
+   * Open Connection with another user.
    *
    * @param {string} matrixUser Matrix user ID
    * @param {string} did DID
@@ -320,6 +321,7 @@ export default class Lorena extends EventEmitter {
    * @param {string} roomId Contact identifier
    * @param {string} credentialType Credential we ask for.
    * @param {number} threadId Local Thread.
+   * @returns {boolean} result
    */
   async askCredential (roomId, credentialType, threadId) {
     return new Promise((resolve) => {

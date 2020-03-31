@@ -32,16 +32,18 @@ describe('Lorena API', function () {
     expect(lorena).to.include.all.keys(lorenaKeys)
   })
 
+  // disabled: walletHandler is a required parameter for the constructor.
   xit('should construct a Lorena class without params', async () => {
     lorena = new Lorena()
     expect(lorena).to.include.all.keys(lorenaKeys)
   })
 
-  xit('should construct a Lorena class with debug', async () => {
-    lorena = new Lorena({ debug: true })
+  it('should construct a Lorena class with debug', async () => {
+    lorena = new Lorena(wallet, { debug: true })
     expect(lorena).to.include.all.keys(lorenaKeys)
   })
 
+  // createUser is not yet implemented
   xit('should create a new Lorena user', async () => {
     const a = await lorena.createUser(username, password)
     if (a) {
@@ -57,10 +59,11 @@ describe('Lorena API', function () {
     }
   })
 
+  // depends on createUser
   xit('should connect', () => {
     lorena.on('ready', ready)
 
-    return lorena.connect('efd708e2b5dc1648-77326e5151d48bd7-138df632fd0de206')
+    lorena.connect('efd708e2b5dc1648-77326e5151d48bd7-138df632fd0de206')
       .then((connected) => {
         assert(connected, 'Should be connected true')
         expect(ready).to.have.been.called()
@@ -68,6 +71,7 @@ describe('Lorena API', function () {
     // .should.eventually.equal(true).notify(done)
   })
 
+  // depends on previous test
   xit('should emit ready', () => {
     expect(ready).to.have.been.called()
   })
@@ -78,6 +82,7 @@ describe('Lorena API', function () {
     expect(typeof lorena.oneMsg).to.equal('function')
   })
 
+  // requires connection
   xit('should receive message:ping', (done) => {
     const pingAction = {
       recipe: 'ping', // Local name for your process
@@ -140,5 +145,21 @@ describe('Wallet API', function () {
     const role = 'user'
     w.remove('credentials', { role })
     expect(w.data.credentials.length).to.equal(1)
+  })
+
+  xit('should unlock wallet', () => {
+    // ...
+  })
+
+  xit('should lock wallet', () => {
+    // ...
+  })
+
+  xit('should write to wallet', () => {
+    // ...
+  })
+
+  xit('should read from wallet', () => {
+    // ...
   })
 })
