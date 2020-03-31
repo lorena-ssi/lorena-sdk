@@ -1,6 +1,6 @@
 ## Lorena Client
 
-Client to manage IDspaces
+Client to manage idspaces
 
 ```
 npm install @lorena-ssi/lorena-cli
@@ -58,7 +58,7 @@ main()
 #### `createUser(username, password)`
 
 Create Matrix user and zenroom keypair.
-Returns true or false when success or not available. 
+Returns true or false when success or not available.
 Throws an error and emits `error` if fails.
 
 #### `connect(connectionstring)`
@@ -80,7 +80,7 @@ Sends an action to another DID.
 
 `threadRef`Local Recipe name
 
-`threadId` Local recipr Id
+`threadId` Local recipe Id
 
 `payload` Information to send
 
@@ -88,7 +88,7 @@ Sends an action to another DID.
 
 Listen to events and execute the callback function
 
-`threadRef` is the one sended to `sendAction` 
+`threadRef` is the one sended to `sendAction`
 
 `type` TODO
 
