@@ -169,7 +169,9 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * get All maessages
+   * get All messages
+   *
+   * @returns {*} events
    */
   async getMessages () {
     let result = await this.matrix.events(this.nextBatch)
@@ -219,7 +221,7 @@ export default class Lorena extends EventEmitter {
    * @param {string} recipe Remote recipe name
    * @param {number} recipeId Remote recipe Id
    * @param {string} threadRef Local Recipe name
-   * @param {number} threadId Local recipr Id
+   * @param {number} threadId Local recipe Id
    * @param {object} payload Information to send
    * @param {string} roomId Contact to send recipe to
    */

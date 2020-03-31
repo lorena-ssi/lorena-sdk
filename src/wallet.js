@@ -94,8 +94,8 @@ export default class Wallet {
     if (typeof value !== 'object') throw new Error('Value should be an Object')
     const found = this.data[collection].filter((item, index) => {
       let founded
-      Object.entries(where).forEach((searchterm) => {
-        if (item[searchterm[0]] === searchterm[1]) {
+      Object.entries(where).forEach((searchTerm) => {
+        if (item[searchTerm[0]] === searchTerm[1]) {
           this.data[collection][index] = { ...this.data[collection][index], ...value }
           founded = true
         } else {
@@ -113,8 +113,8 @@ export default class Wallet {
     if (typeof where !== 'object') throw new Error('Value should be an Object')
     const found = this.data[collection].filter((item) => {
       let founded
-      Object.entries(where).forEach((searchterm) => {
-        if (item[searchterm[0]] === searchterm[1]) {
+      Object.entries(where).forEach((searchTerm) => {
+        if (item[searchTerm[0]] === searchTerm[1]) {
           founded = true
         } else {
           founded = false
