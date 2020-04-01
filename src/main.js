@@ -169,7 +169,9 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * get All maessages
+   * get All messages
+   *
+   * @returns {*} events
    */
   async getMessages () {
     let result = await this.matrix.events(this.nextBatch)
@@ -219,7 +221,7 @@ export default class Lorena extends EventEmitter {
    * @param {string} recipe Remote recipe name
    * @param {number} recipeId Remote recipe Id
    * @param {string} threadRef Local Recipe name
-   * @param {number} threadId Local recipr Id
+   * @param {number} threadId Local recipe Id
    * @param {object} payload Information to send
    * @param {string} roomId Contact to send recipe to
    */
@@ -243,9 +245,10 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * DOes the handshake
+   * Does the handshake
    *
    * @param {number} threadId Local Thread unique ID
+   * @returns {boolean} result
    */
   async handshake (threadId) {
     const did = this.wallet.info.did
@@ -289,7 +292,7 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * Open Connection wit a another user.
+   * Open Connection with another user.
    *
    * @param {string} matrixUser Matrix user ID
    * @param {string} did DID
@@ -318,6 +321,7 @@ export default class Lorena extends EventEmitter {
    * @param {string} roomId Contact identifier
    * @param {string} credentialType Credential we ask for.
    * @param {number} threadId Local Thread.
+   * @returns {boolean} result
    */
   async askCredential (roomId, credentialType, threadId) {
     return new Promise((resolve) => {

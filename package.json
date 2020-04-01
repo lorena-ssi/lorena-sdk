@@ -9,23 +9,24 @@
   "bin": {
     "lorena": "./src/terminal.js"
   },
-  "scripts": {
-    "coverage": "nyc npm run mocha && nyc report --reporter=html",
-    "coveralls": "nyc npm run mocha && nyc report --reporter=text-lcov | coveralls",
-    "debug": "./pds 1",
-    "lint": "eslint ./src ./test --fix",
-    "mocha": "mocha test --timeout 50000 --bail --require esm",
-    "test": "npm run mocha"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lorena-ssi/lorena-cli.git"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run lint"
-    }
+  "keywords": [
+    "npm",
+    "node",
+    "identity",
+    "javascript"
+  ],
+  "bugs": {
+    "url": "https://github.com/lorena-ssi/lorena-cli/issues"
   },
+  "homepage": "https://github.com/lorena-ssi/lorena-cli#readme",
   "dependencies": {
     "@lorena-ssi/credential-lib": "^1.0.1",
     "@lorena-ssi/matrix-lib": "^1.0.9",
-    "@lorena-ssi/substrate-lib": "^1.0.4",
+    "@lorena-ssi/substrate-lib": "^1.2.0",
     "@lorena-ssi/zenroom-lib": "^1.4.7",
     "debug": "^4.1.1",
     "esm": "^3.2.25",
@@ -36,13 +37,13 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-spies": "^1.0.0",
-    "coveralls": "^3.0.9",
+    "coveralls": "^3.0.11",
     "eslint": "^6.8.0",
-    "eslint-config-standard": "^14.1.0",
+    "eslint-config-standard": "^14.1.1",
     "eslint-plugin-chai-friendly": "^0.5.0",
-    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-jsdoc": "^22.1.0",
-    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "husky": "^4.2.3",
@@ -51,12 +52,18 @@
     "nixt": "^0.5.1",
     "nyc": "^15.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/lorena-ssi/lorena-cli.git"
+  "scripts": {
+    "coverage": "nyc npm run mocha && nyc report --reporter=html",
+    "coveralls": "nyc npm run mocha && nyc report --reporter=text-lcov | coveralls",
+    "debug": "./pds 1",
+    "lint": "eslint ./src ./test",
+    "lint-fix": "eslint ./src ./test --fix",
+    "mocha": "mocha test --timeout 50000 --bail --require esm",
+    "test": "npm run mocha"
   },
-  "bugs": {
-    "url": "https://github.com/lorena-ssi/lorena-cli/issues"
-  },
-  "homepage": "https://github.com/lorena-ssi/lorena-cli#readme"
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint"
+    }
+  }
 }

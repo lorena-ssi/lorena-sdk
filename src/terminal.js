@@ -117,7 +117,7 @@ const callRecipe = async (lorena, recipe, payload = {}) => {
 /**
  * Opens the terminal
  *
- * @param {object} lorena Lorena Obkect
+ * @param {object} lorena Lorena Object
  * @param {object} wallet Local information (wallet)
  */
 const terminal = async (lorena, wallet) => {
