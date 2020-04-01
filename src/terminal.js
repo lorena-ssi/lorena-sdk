@@ -159,15 +159,14 @@ const terminal = async (lorena, wallet) => {
       payload.additionalName = await term.inputField().promise
       term.gray('\nDNI : ')
       payload.propertyID = await term.inputField().promise
-      term.gray('\nTelephone : ')
-      payload.telephone = await term.inputField().promise
       term.gray('\n')
       list = await callRecipe(lorena, input, payload)
       console.log(list)
       break
     case 'ping':
     case 'ping-admin':
-      await callRecipe(lorena, input)
+      list = await callRecipe(lorena, input)
+      console.log(list)
       break
     case 'contact-list':
       list = await callRecipe(lorena, input, { filter: 'all' })

@@ -210,7 +210,7 @@ export default class Lorena extends EventEmitter {
             resolve(data)
           })
         }),
-        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
       ]
     )
   }
