@@ -1,3 +1,3 @@
 #!/bin/bash
 
-DEBUG=did:error:* node -r esm ./src/terminal.js $@
+DEBUG=did:error:* node --no-warnings -r esm ./src/terminal.js $@
