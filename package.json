@@ -7,7 +7,7 @@
   "main": "src/index.js",
   "module": "src/main.js",
   "bin": {
-    "lorena": "./src/terminal.js"
+    "lorena": "./terminal"
   },
   "repository": {
     "type": "git",
