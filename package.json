@@ -1,13 +1,13 @@
 {
   "name": "@lorena-ssi/lorena-cli",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "description": "Lorena Client",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "MIT",
   "main": "src/index.js",
   "module": "src/main.js",
   "bin": {
-    "lorena": "./src/terminal.js"
+    "lorena": "./terminal"
   },
   "repository": {
     "type": "git",
