@@ -137,9 +137,13 @@ const terminal = async (lorena, wallet) => {
       term.gray('info :\n')
       console.log(wallet.info)
       break
-    case 'credentials':
+    case 'credential':
       term.gray('Credentials :\n')
-      console.log(wallet.data.credentials)
+      console.log(wallet.data.credentials['0'])
+      break
+    case 'credential-member':
+      term.gray('Credentials :\n')
+      console.log(wallet.data.credentials['0'].credentialSubject.member)
       break
     case 'contacts':
       term.gray('Contacts :\n')
@@ -208,7 +212,6 @@ const terminal = async (lorena, wallet) => {
       payload.matrix = await term.inputField().promise
       term.gray('\n')
       await lorena.createConnection(payload.matrix, payload.did)
-
       break
     case 'credential-get':
       payload = {}
@@ -224,6 +227,10 @@ const terminal = async (lorena, wallet) => {
       term.gray('RoomId : ')
       payload = await term.inputField().promise
       await lorena.deleteConnection(payload)
+      break
+    case 'test':
+      list = await callRecipe(lorena, 'credential-issue', { type: 'action', did: 'VVhCc1lrTTFhV0k0V21GMVZEVjZWSEpP', subject: { name: 'as', description: 'hello' } })
+      console.log(list)
       break
     case 'exit':
     case 'quit':

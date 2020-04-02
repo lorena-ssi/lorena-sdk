@@ -281,6 +281,7 @@ export default class Lorena extends EventEmitter {
         .then(async (received) => {
           this.wallet.info.did = received.payload.did
           this.wallet.info.didMethod = received.payload.didMethod
+          this.wallet.info.didBase = received.payload.didBase
           this.wallet.add('credentials', received.payload.credential)
           resolve(true)
         })
