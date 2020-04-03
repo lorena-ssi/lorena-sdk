@@ -166,7 +166,6 @@ export default class Lorena extends EventEmitter {
             default:
               parsedElement = JSON.parse(element.payload.body)
               parsedElement.roomId = element.roomId
-              console.log('RECIPE : ' + parsedElement.recipe)
               this.emit(`message:${parsedElement.recipe}`, parsedElement)
               this.emit('message', parsedElement)
               break

@@ -48,7 +48,7 @@ const main = async () => {
     await lorena.handshake(threadId++)
 
     // Save config.
-    term.cyan('\nSave config')
+    term.cyan('\nSave config & connect...')
     await lorena.lock(password)
   } else {
     await lorena.connect()
@@ -123,7 +123,7 @@ const callRecipe = async (lorena, recipe, payload = {}) => {
 const terminal = async (lorena, wallet) => {
   let input, list, payload
   const history = []
-  const autoComplete = ['info', 'exit', 'help', 'pubkey', 'ping', 'ping-remote', 'ping-admin', 'contact-list', 'contact-invite', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list']
+  const autoComplete = ['info', 'exit', 'help', 'pubkey', 'ping', 'ping-remote', 'ping-admin', 'contact-list', 'contact-invite', 'contact-add', 'contact-info', 'peer-add', 'peer-list', 'contact-handshake', 'recipe-list', 'action-issue']
 
   term.cyan('lorena# ')
   input = await term.inputField({ history: history, autoComplete: autoComplete, autoCompleteMenu: true }).promise
@@ -228,8 +228,12 @@ const terminal = async (lorena, wallet) => {
       payload = await term.inputField().promise
       await lorena.deleteConnection(payload)
       break
-    case 'test':
-      list = await callRecipe(lorena, 'credential-issue', { type: 'action', did: 'VVhCc1lrTTFhV0k0V21GMVZEVjZWSEpP', subject: { name: 'as', description: 'hello' } })
+    case 'action-issue':
+      payload = {}
+      term.gray('DID : ')
+      payload.did = await term.inputField().promise
+      payload.subject = { name: 'Compra', description: 'Comprar en el Vendrell', location: 'Vendrell' }
+      list = await callRecipe(lorena, 'credential-issue', { type: 'action', did: payload.did, subject: payload.subject })
       console.log(list)
       break
     case 'exit':

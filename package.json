@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/lorena-ssi/lorena-cli#readme",
   "dependencies": {
-    "@lorena-ssi/credential-lib": "^1.0.5",
+    "@lorena-ssi/credential-lib": "^1.0.7",
     "@lorena-ssi/matrix-lib": "^1.0.9",
     "@lorena-ssi/substrate-lib": "^1.2.1",
     "@lorena-ssi/wallet-lib": "^1.0.0",
