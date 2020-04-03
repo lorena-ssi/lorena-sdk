@@ -97,4 +97,8 @@ describe('Lorena API', function () {
     lorena.on('message:pong', onpong)
     lorena.sendAction(pingAction.recipe, pingAction.recipeId, pingAction.threadRef, pingAction.threadId, pingAction.payload)
   })
+
+  it('should close connections', () => {
+    lorena.disconnect()
+  })
 })
