@@ -30,6 +30,7 @@ export default class Lorena extends EventEmitter {
     this.processing = false
     this.ready = false
     this.nextBatch = ''
+    this.disconnecting = false
   }
 
   lock (password) {
@@ -118,6 +119,8 @@ export default class Lorena extends EventEmitter {
    * Disconnect for clean shutdown
    */
   disconnect () {
+    this.emit('disconnecting')
+    this.disconnecting = true
     if (this.blockchain) {
       this.blockchain.disconnect()
     }
@@ -128,7 +131,7 @@ export default class Lorena extends EventEmitter {
    */
   async loop () {
     let parsedElement
-    while (true) {
+    while (!this.disconnecting) {
       const events = await this.getMessages()
       this.processQueue()
 
