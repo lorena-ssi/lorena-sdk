@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import Wallet from './wallet'
-var term = require('terminal-kit').terminal
-const Lorena = require('../src/index.js').default
+const term = require('terminal-kit').terminal
+const Lorena = require('../src/index').default
+const Wallet = require('@lorena-ssi/wallet-lib').default
 
 let threadId = 0
 

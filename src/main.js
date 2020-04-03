@@ -1,12 +1,11 @@
-import Matrix from '@lorena-ssi/matrix-lib'
-import Zenroom from '@lorena-ssi/zenroom-lib'
-import Blockchain from '@lorena-ssi/substrate-lib'
+const Matrix = require('@lorena-ssi/matrix-lib')
+const Zenroom = require('@lorena-ssi/zenroom-lib')
+const Blockchain = require('@lorena-ssi/substrate-lib')
 
-// import Credential from '@lorena-ssi/credential-lib'
+// const Credential = require('@lorena-ssi/credential-lib')
 
-import log from 'debug'
-import { EventEmitter } from 'events'
-
+const { EventEmitter } = require('events')
+const log = require('debug')
 const debug = log('did:debug:cli')
 const error = log('did:error:cli')
 
