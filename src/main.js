@@ -115,6 +115,15 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
+   * Disconnect for clean shutdown
+   */
+  disconnect () {
+    if (this.blockchain) {
+      this.blockchain.disconnect()
+    }
+  }
+
+  /**
    * Loop through received messages.
    */
   async loop () {
