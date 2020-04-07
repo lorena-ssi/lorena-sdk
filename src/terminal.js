@@ -123,7 +123,7 @@ const callRecipe = async (lorena, recipe, payload = {}) => {
 const terminal = async (lorena, wallet) => {
   let list, payload
   const history = []
-  const autoComplete = ['help', 'info', 'credential', 'credential-member', 'cintacts', 'pubkey', 'ping', 'ping-remote', 'contact-invite', 'contact-list', 'contact-add', 'contact-info', 'action-issue', 'exit']
+  const autoComplete = ['help', 'info', 'credential', 'credential-member', 'contacts', 'pubkey', 'ping', 'ping-remote', 'contact-invite', 'contact-list', 'contact-add', 'contact-info', 'action-issue', 'exit']
 
   term.cyan('lorena# ')
   const input = await term.inputField({ history: history, autoComplete: autoComplete, autoCompleteMenu: true }).promise
@@ -154,6 +154,7 @@ const terminal = async (lorena, wallet) => {
       console.log(wallet.info.keyPair[wallet.info.username].keypair.public_key)
       break
     case 'ping':
+    case 'recipe-list':
       list = await callRecipe(lorena, input)
       console.log(list)
       break
@@ -181,10 +182,6 @@ const terminal = async (lorena, wallet) => {
       break
     case 'contact-list':
       list = await callRecipe(lorena, input, { filter: 'all' })
-      console.log(list)
-      break
-    case 'recipe-list':
-      list = await callRecipe(lorena, input)
       console.log(list)
       break
     case 'contact-handshake':
@@ -235,6 +232,8 @@ const terminal = async (lorena, wallet) => {
         await lorena.lock(payload)
       }
       process.exit()
+    default:
+      term.gray('Command "' + input + '" does not exist. For help type "help"\n')
   }
   terminal(lorena, wallet)
 }
