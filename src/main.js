@@ -210,9 +210,10 @@ export default class Lorena extends EventEmitter {
    * Waits for something to happen only once
    *
    * @param {string} msg Message to be listened to
+   * @param {number} timeout for the call
    * @returns {Promise} Promise with the result
    */
-  oneMsg (msg) {
+  oneMsg (msg, timeout = 10000) {
     return Promise.race(
       [
         new Promise((resolve) => {
@@ -220,7 +221,7 @@ export default class Lorena extends EventEmitter {
             resolve(data)
           })
         }),
-        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout')), timeout))
       ]
     )
   }
