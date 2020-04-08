@@ -79,6 +79,11 @@ const main = async () => {
     console.log(payload)
   })
 
+  lorena.on('message:action-post', async (payload) => {
+    term('\n^Received action ^')
+    console.log(payload)
+  })
+
   lorena.on('contact-incoming', (payload) => {
     term('\n^+Contact invitation Incoming from ^' + payload + ' \n')
   })
@@ -223,6 +228,10 @@ const terminal = async (lorena, wallet) => {
       payload.subject = { name: 'Compra', description: 'Comprar en el Vendrell', location: 'Vendrell' }
       term('\n')
       list = await callRecipe(lorena, 'action-issue', { contactId: payload.contactId, subject: payload.subject })
+      console.log(list)
+      break
+    case 'action-list':
+      list = await callRecipe(lorena, input, { filter: 'all' })
       console.log(list)
       break
     case 'exit':
