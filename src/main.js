@@ -31,6 +31,7 @@ export default class Lorena extends EventEmitter {
     this.ready = false
     this.nextBatch = ''
     this.disconnecting = false
+    this.threadId = 0
   }
 
   lock (password) {
@@ -210,9 +211,10 @@ export default class Lorena extends EventEmitter {
    * Waits for something to happen only once
    *
    * @param {string} msg Message to be listened to
+   * @param {number} timeout for the call
    * @returns {Promise} Promise with the result
    */
-  oneMsg (msg) {
+  oneMsg (msg, timeout = 10000) {
     return Promise.race(
       [
         new Promise((resolve) => {
@@ -220,7 +222,7 @@ export default class Lorena extends EventEmitter {
             resolve(data)
           })
         }),
-        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout')), timeout))
       ]
     )
   }
@@ -257,10 +259,14 @@ export default class Lorena extends EventEmitter {
   /**
    * Does the handshake
    *
-   * @param {number} threadId Local Thread unique ID
+   * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
    * @returns {boolean} result
    */
-  async handshake (threadId) {
+  async handshake (threadId = undefined) {
+    // use the threadId if provided, otherwise use the common one
+    if (threadId === undefined) {
+      threadId = this.threadId++
+    }
     const did = this.wallet.info.did
     const username = this.wallet.info.username
     const random = await this.zenroom.random()
@@ -303,6 +309,23 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
+   * Call a recipe, using the intrinsic threadId adn get back the single message
+   *
+   * @param {string} recipe name
+   * @param {*} payload to send with recipe
+   * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
+   * @returns {Promise} of message returned
+   */
+  async callRecipe (recipe, payload = {}, threadId = undefined) {
+    // use the threadId if provided, otherwise use the common one
+    if (threadId === undefined) {
+      threadId = this.threadId++
+    }
+    await this.sendAction(recipe, 0, recipe, threadId, payload)
+    return this.oneMsg(`message:${recipe}`)
+  }
+
+  /**
    * Open Connection with another user.
    *
    * @param {string} matrixUser Matrix user ID
@@ -331,10 +354,14 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} roomId Contact identifier
    * @param {string} credentialType Credential we ask for.
-   * @param {number} threadId Local Thread.
+   * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
    * @returns {boolean} result
    */
-  async askCredential (roomId, credentialType, threadId) {
+  async askCredential (roomId, credentialType, threadId = undefined) {
+    // use the threadId if provided, otherwise use the common one
+    if (threadId === undefined) {
+      threadId = this.threadId
+    }
     return new Promise((resolve) => {
       const payload = {
         credentialType: credentialType

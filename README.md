@@ -70,6 +70,16 @@ Returns true if the connection is success
 
 Throws an error and emits `error` if fails.
 
+#### `handshake()`
+
+Establishes a connection with the idspace, checking public-key signatures.
+
+#### `callRecipe(recipe, { payloadText: 'text', payloadETC: 'ETC'})`
+
+Calls a recipe and returns the payload
+
+Throws an error and emits `error` if fails.
+
 #### `sendAction(recipe, recipeId, threadRef, thReadId, payload)`
 
 Sends an action to another DID.

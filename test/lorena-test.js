@@ -33,7 +33,7 @@ describe('Lorena API', function () {
   })
 
   it('should construct a Lorena class with debug', async () => {
-    lorena = new Lorena(wallet, { debug: true })
+    lorena = new Lorena(wallet, { debug: true, silent: true })
     expect(lorena).to.include.all.keys(lorenaKeys)
   })
 
