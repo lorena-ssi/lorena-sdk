@@ -34,6 +34,16 @@ export default class Lorena extends EventEmitter {
     this.threadId = 0
   }
 
+  async addKeyPair (username) {
+    return new Promise((resolve) => {
+      this.zenroom.newKeyPair(username)
+        .then((keyPair) => {
+          this.wallet.info.keyPair = keyPair
+          resolve(this.wallet.info.keyPair)
+        })
+    })
+  }
+
   lock (password) {
     this.emit('lock', password)
     return this.wallet.lock(password)
@@ -59,12 +69,21 @@ export default class Lorena extends EventEmitter {
         .then((clientCode) => {
           const client = clientCode.message.split('-!-')
           this.wallet.info.username = username
+
+          // DID
+          const did = client[2].split(':')
+          this.wallet.info.didBase = 'did:lor:'
+          this.wallet.info.did = did[3]
+          this.wallet.info.didMethod = did[2]
+
+          // Matrix.
           const matrix = client[0].split(':')
           this.wallet.info.matrixUser = matrix[0].substr(1)
           this.wallet.info.matrixServer = 'https://' + matrix[1]
           this.wallet.info.matrixFederation = ':' + matrix[1]
           this.wallet.info.matrixPass = client[1]
-          this.wallet.info.did = client[2]
+
+          // Blockchain.
           this.wallet.info.blockchainServer = client[3]
           this.matrix = new Matrix(this.wallet.info.matrixServer)
           return this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
@@ -73,14 +92,15 @@ export default class Lorena extends EventEmitter {
           return this.matrix.events('')
         })
         .then((result) => {
-          this.wallet.info.roomId = result.events[0].roomId
+          this.wallet.add('contacts', {
+            roomId: result.events[0].roomId,
+            did: this.wallet.info.didBase + this.wallet.info.didMethod,
+            alias: 'newdid',
+            status: 'accepted'
+          })
           return this.matrix.acceptConnection(result.events[0].roomId)
         })
         .then(() => {
-          return this.zenroom.newKeyPair(username)
-        })
-        .then((keyPair) => {
-          this.wallet.info.keyPair = keyPair
           resolve(true)
         })
         .catch((e) => {
@@ -95,24 +115,26 @@ export default class Lorena extends EventEmitter {
    */
   async connect () {
     if (this.ready === true) return true
-    try {
-      this.matrix = new Matrix(this.wallet.info.matrixServer)
-      await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
-      this.blockchain = new Blockchain(this.wallet.info.blockchainServer)
-      await this.blockchain.connect()
+    else if (this.wallet.info.matrixUser) {
+      try {
+        this.matrix = new Matrix(this.wallet.info.matrixServer)
+        await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
+        this.blockchain = new Blockchain(this.wallet.info.blockchainServer)
+        await this.blockchain.connect()
 
-      // TODO: No need to store token in the database. Use in memory instead.
-      const events = await this.matrix.events('')
-      this.nextBatch = events.nextBatch
-      this.ready = true
-      this.processQueue()
-      this.emit('ready')
-      this.loop()
-      return true
-    } catch (error) {
-      debug('%O', error)
-      this.emit('error', error)
-      throw error
+        // TODO: No need to store token in the database. Use in memory instead.
+        const events = await this.matrix.events('')
+        this.nextBatch = events.nextBatch
+        this.ready = true
+        this.processQueue()
+        this.emit('ready')
+        this.loop()
+        return true
+      } catch (error) {
+        debug('%O', error)
+        this.emit('error', error)
+        throw error
+      }
     }
   }
 
@@ -159,9 +181,7 @@ export default class Lorena extends EventEmitter {
                 status: 'connected'
               })
               // await this.matrix.acceptConnection(element.roomId)
-              console.log('EMIT contact-added')
               this.emit('contact-added', element.sender)
-              console.log('EMIT change')
               this.emit('change')
               break
             default:
@@ -259,10 +279,11 @@ export default class Lorena extends EventEmitter {
   /**
    * Does the handshake
    *
+   * @param {string} roomID to connect TO
    * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
    * @returns {boolean} result
    */
-  async handshake (threadId = undefined) {
+  async handshake (roomID, threadId = undefined) {
     // use the threadId if provided, otherwise use the common one
     if (threadId === undefined) {
       threadId = this.threadId++
@@ -271,16 +292,21 @@ export default class Lorena extends EventEmitter {
     const username = this.wallet.info.username
     const random = await this.zenroom.random()
     const pubKey = {}
+    let handshake
+
+    // TODO: Connect to DID (NOT ROOMID)
+
     return new Promise((resolve, reject) => {
-      this.blockchain.getActualDidKey(did)
-        .then((key) => {
-          pubKey[did] = { public_key: key }
-          return this.sendAction('contact-handshake', 0, 'handshake', threadId, { challenge: random })
-        })
+      this.sendAction('contact-handshake', 0, 'handshake', threadId, { challenge: random }, roomID)
         .then(() => {
           return this.oneMsg('message:handshake')
         })
-        .then(async (handshake) => {
+        .then((result) => {
+          handshake = result
+          this.blockchain.getActualDidKey(handshake.payload.did)
+        })
+        .then(async (key) => {
+          pubKey[did] = { public_key: key }
           const check = await this.zenroom.checkSignature(did, pubKey, handshake.payload.signature, did)
           const buffer64 = Buffer.from(random).toString('base64').slice(0, -1)
           const signOk = (check.signature === 'correct') && (handshake.payload.signature[did].draft === buffer64)
@@ -295,10 +321,8 @@ export default class Lorena extends EventEmitter {
           return this.oneMsg('message:handshake')
         })
         .then(async (received) => {
-          this.wallet.info.did = received.payload.did
-          this.wallet.info.didMethod = received.payload.didMethod
-          this.wallet.info.didBase = received.payload.didBase
-          this.wallet.add('credentials', received.payload.credential)
+          // ADD CONTACT
+          // this.wallet.add('credentials', received.payload.credential)
           resolve(true)
         })
         .catch((e) => {
@@ -360,7 +384,7 @@ export default class Lorena extends EventEmitter {
   async askCredential (roomId, credentialType, threadId = undefined) {
     // use the threadId if provided, otherwise use the common one
     if (threadId === undefined) {
-      threadId = this.threadId
+      threadId = this.threadId++
     }
     return new Promise((resolve) => {
       const payload = {
