@@ -1,6 +1,0 @@
-#!/bin/bash
-# When run as an NPM bin it uses a symlink which misreports the location.
-SCRIPT_FILE=`readlink -f "${BASH_SOURCE[0]}"`
-SCRIPT_DIR="$( cd "$( dirname "$SCRIPT_FILE" )" >/dev/null 2>&1 && pwd )"
-# Run from the directory where the file resides
-(cd $SCRIPT_DIR && DEBUG=did:error:* node --no-warnings -r esm ./src/terminal.js $@)
