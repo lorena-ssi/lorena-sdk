@@ -335,7 +335,7 @@ export default class Lorena extends EventEmitter {
    * @param {number} threadId Local Thread.
    * @returns {boolean} result
    */
-  async askCredential (roomId, credentialType, threadId) {
+  async askCredential (roomId, credentialType, threadId = undefined) {
     return new Promise((resolve) => {
       const payload = {
         credentialType: credentialType

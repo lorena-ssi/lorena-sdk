@@ -3,8 +3,6 @@ const term = require('terminal-kit').terminal
 const Lorena = require('../src/index').default
 const Wallet = require('@lorena-ssi/wallet-lib').default
 
-let threadId = 0
-
 term.on('key', function (name, matches, data) {
   if (name === 'CTRL_C') {
     term.grabInput(false)
@@ -45,7 +43,7 @@ const main = async () => {
 
     // Do the handshake with the server
     term.cyan('\nHandshake : get DID')
-    await lorena.handshake(threadId++)
+    await lorena.handshake()
 
     // Save config.
     term.cyan('\nSave config & connect...')
@@ -98,10 +96,7 @@ const main = async () => {
 const callRecipe = async (lorena, recipe, payload = {}) => {
   return new Promise((resolve, reject) => {
     term.gray(recipe + '...')
-    lorena.sendAction(recipe, 0, recipe, threadId++, payload)
-      .then(() => {
-        return lorena.oneMsg('message:' + recipe)
-      })
+    lorena.callRecipe(recipe, payload)
       .then((result) => {
         const total = (Array.isArray(result.payload) ? result.payload.length : 1)
         term('^+done^ - ' + total + ' results\n')
@@ -186,7 +181,7 @@ const terminal = async (lorena, wallet) => {
       break
     case 'contact-handshake':
       term.gray('handshake...')
-      await lorena.handshake(threadId++)
+      await lorena.handshake()
       term('^+done^\n')
       break
     case 'contact-add':
@@ -205,7 +200,7 @@ const terminal = async (lorena, wallet) => {
       // term.gray('\nCredential (memberOf) : ')
       // payload.credential = await term.inputField().promise
       term.gray('\n')
-      await lorena.askCredential(payload.roomId, 'memberOf', threadId++)
+      await lorena.askCredential(payload.roomId, 'memberOf')
       break
     case 'contact-del':
       payload = {}
