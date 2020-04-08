@@ -1,19 +1,19 @@
-## Lorena Client
+## Lorena SDK
 
-Client to manage idspaces
+Client library for interacting with Lorena identities
 
 ```
-npm install @lorena-ssi/lorena-cli
+npm install @lorena-ssi/lorena-sdk
 ```
 
-[![Build Status](https://travis-ci.com/lorena-ssi/lorena-cli.svg?branch=master)](https://travis-ci.com/lorena-ssi/lorena-cli)
-[![Coverage Status](https://coveralls.io/repos/github/lorena-ssi/lorena-cli/badge.svg?branch=master)](https://coveralls.io/github/lorena-ssi/lorena-cli?branch=master)
+[![Build Status](https://travis-ci.com/lorena-ssi/lorena-sdk.svg?branch=master)](https://travis-ci.com/lorena-ssi/lorena-sdk)
+[![Coverage Status](https://coveralls.io/repos/github/lorena-ssi/lorena-sdk/badge.svg?branch=master)](https://coveralls.io/github/lorena-ssi/lorena-sdk?branch=master)
 
 ## Usage
 
 ``` js
-const Lorena = require('@lorena-ssi/lorena-cli').default
-// const import Lorena from '@lorena-ssi/lorena-cli'
+const Lorena = require('@lorena-ssi/lorena-sdk').default
+// const import Lorena from '@lorena-ssi/lorena-sdk'
 const main = async () => {
   const lorena = new Lorena({debug: true})
   lorena.connect('connectionIdString')
@@ -76,7 +76,7 @@ Establishes a connection with the idspace, checking public-key signatures.
 
 #### `callRecipe(recipe, { payloadText: 'text', payloadETC: 'ETC'})`
 
-Calls a recipe and returns the payload
+Calls a recipe and returns the payload. A wrapper around `sendAction`.
 
 Throws an error and emits `error` if fails.
 
