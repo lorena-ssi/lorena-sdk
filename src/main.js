@@ -1,8 +1,7 @@
 const Matrix = require('@lorena-ssi/matrix-lib')
 const Zenroom = require('@lorena-ssi/zenroom-lib')
+const Credential = require('@lorena-ssi/credential-lib')
 const Blockchain = require('@lorena-ssi/substrate-lib')
-
-// const Credential = require('@lorena-ssi/credential-lib')
 
 const { EventEmitter } = require('events')
 const log = require('debug')
@@ -34,12 +33,71 @@ export default class Lorena extends EventEmitter {
     this.threadId = 0
   }
 
-  async addKeyPair (username) {
+  async addDID (username) {
     return new Promise((resolve) => {
-      this.zenroom.newKeyPair(username)
+      this.zenroom.randomDID()
+        .then((did) => {
+          resolve(did)
+        })
+    })
+  }
+
+  async initWallet (didMethod) {
+    // TODO: activar dominis així
+    // this.wallet.info.blockchainServer = 'wss:'+didMethod + '.blockchain.lorena.tech'
+    this.wallet.info.blockchainServer = 'wss://lorena.substrate.test.caelumlabs.com'
+
+    this.wallet.info.matrixFederation = didMethod + '.matrix.lorena.tech'
+    this.wallet.info.matrixServer = 'https://' + this.wallet.info.matrixFederation
+    this.matrix = new Matrix(this.wallet.info.matrixServer)
+
+    return new Promise((resolve, reject) => {
+      this.zenroom.randomDID()
+        .then((did) => {
+          this.wallet.info.did = 'did:lor:' + didMethod + ':' + did
+          return this.zenroom.newKeyPair(this.wallet.info.did)
+        })
         .then((keyPair) => {
           this.wallet.info.keyPair = keyPair
-          resolve(this.wallet.info.keyPair)
+          return this.zenroom.random(12)
+        })
+        .then((matrixUser) => {
+          this.wallet.info.matrixUser = matrixUser.toLowerCase()
+
+          return this.zenroom.random(12)
+        })
+        .then((matrixPass) => {
+          this.wallet.info.matrixPass = matrixPass
+          return this.matrix.available(this.wallet.info.matrixUser)
+        })
+        .then((available) => {
+          if (available) {
+            return this.matrix.register(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
+          } else {
+            reject(new Error('Could not init wallet'))
+          }
+        })
+        .then(() => {
+          resolve(this.wallet.info)
+        })
+        .catch(() => {
+          reject(new Error('Could not init wallet'))
+        })
+    })
+  }
+
+  async signCredential (subject) {
+    return new Promise((resolve) => {
+      // Sign the persona
+      Credential.signCredential(this.zenroom, subject, this.wallet.info.keyPair, this.wallet.info.did)
+        .then((signCredential) => {
+          this.wallet.add('credentials', {
+            type: 'Persona',
+            issuer: this.wallet.info.did,
+            id: this.wallet.info.did,
+            credential: signCredential
+          })
+          resolve(signCredential)
         })
     })
   }
@@ -55,57 +113,31 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * new Client.
+   * memberOf.
    *
-   * @param {string} connString Encrypted connection String
-   * @param {string} pin PIN
-   * @param {string} username Username
+   * @param {string} roomID Contact Identifier
+   * @param {string} roleName Name fo the role we ask for
+   * @param {string} extra Extra information
    */
-  async newClient (connString, pin, username) {
+  async memberOf (roomID, roleName, extra) {
     return new Promise((resolve) => {
-      const conn = connString.split('-!-')
-      const m = { secret_message: { checksum: conn[0], header: conn[1], iv: conn[2], text: conn[3] } }
-      this.zenroom.decryptSymmetric(pin, m)
-        .then((clientCode) => {
-          const client = clientCode.message.split('-!-')
-          this.wallet.info.username = username
-
-          // DID
-          const did = client[2].split(':')
-          this.wallet.info.didBase = 'did:lor:'
-          this.wallet.info.did = did[3]
-          this.wallet.info.didMethod = did[2]
-
-          // Matrix.
-          const matrix = client[0].split(':')
-          this.wallet.info.matrixUser = matrix[0].substr(1)
-          this.wallet.info.matrixServer = 'https://' + matrix[1]
-          this.wallet.info.matrixFederation = ':' + matrix[1]
-          this.wallet.info.matrixPass = client[1]
-
-          // Blockchain.
-          this.wallet.info.blockchainServer = client[3]
-          this.matrix = new Matrix(this.wallet.info.matrixServer)
-          return this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
-        })
+      const payload = {
+        did: this.wallet.info.did,
+        member: this.wallet.data.credentials[0].credential,
+        pubKey: this.wallet.info.keyPair[this.wallet.info.did].keypair.public_key,
+        roleName,
+        extra
+      }
+      this.sendAction('member-of', 0, 'member-of', 1, payload, roomID)
         .then(() => {
-          return this.matrix.events('')
+          return this.oneMsg('message:member-of')
         })
         .then((result) => {
-          this.wallet.add('contacts', {
-            roomId: result.events[0].roomId,
-            did: this.wallet.info.didBase + this.wallet.info.didMethod,
-            alias: 'newdid',
-            status: 'accepted'
-          })
-          return this.matrix.acceptConnection(result.events[0].roomId)
-        })
-        .then(() => {
-          resolve(true)
+          console.log(result)
+          resolve()
         })
         .catch((e) => {
           console.log(e)
-          resolve(false)
         })
     })
   }
@@ -119,10 +151,10 @@ export default class Lorena extends EventEmitter {
       try {
         this.matrix = new Matrix(this.wallet.info.matrixServer)
         await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
+
         this.blockchain = new Blockchain(this.wallet.info.blockchainServer)
         await this.blockchain.connect()
 
-        // TODO: No need to store token in the database. Use in memory instead.
         const events = await this.matrix.events('')
         this.nextBatch = events.nextBatch
         this.ready = true
