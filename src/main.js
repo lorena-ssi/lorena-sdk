@@ -6,8 +6,11 @@ const Blockchain = require('@lorena-ssi/substrate-lib')
 const { EventEmitter } = require('events')
 const log = require('debug')
 const debug = log('did:debug:cli')
-const error = log('did:error:cli')
 
+const didValue = (did) => {
+  const didValue = did.split(':')
+  return didValue[3]
+}
 /**
  * Lorena SDK - Class
  */
@@ -43,10 +46,7 @@ export default class Lorena extends EventEmitter {
   }
 
   async initWallet (didMethod) {
-    // TODO: activar dominis així
-    // this.wallet.info.blockchainServer = 'wss:'+didMethod + '.blockchain.lorena.tech'
-    this.wallet.info.blockchainServer = 'wss://lorena.substrate.test.caelumlabs.com'
-
+    this.wallet.info.blockchainServer = 'wss://' + didMethod + '.substrate.lorena.tech'
     this.wallet.info.matrixFederation = didMethod + '.matrix.lorena.tech'
     this.wallet.info.matrixServer = 'https://' + this.wallet.info.matrixFederation
     this.matrix = new Matrix(this.wallet.info.matrixServer)
@@ -112,32 +112,92 @@ export default class Lorena extends EventEmitter {
     return this.wallet.unlock(password)
   }
 
+  getContact (roomId) {
+    return this.wallet.get('contacts', { roomId: roomId })
+  }
+
   /**
-   * memberOf.
+   * memberOf
    *
-   * @param {string} roomID Contact Identifier
-   * @param {string} roleName Name fo the role we ask for
+   * @param {string} roomId Contact Identifier
    * @param {string} extra Extra information
+   * @param {string} roleName Name fo the role we ask for
+   * @returns {Promise} Result of calling recipr member-of
    */
-  async memberOf (roomID, roleName, extra) {
+  memberOf (roomId, extra, roleName) {
     return new Promise((resolve) => {
-      const payload = {
-        did: this.wallet.info.did,
-        member: this.wallet.data.credentials[0].credential,
-        pubKey: this.wallet.info.keyPair[this.wallet.info.did].keypair.public_key,
-        roleName,
-        extra
-      }
-      this.sendAction('member-of', 0, 'member-of', 1, payload, roomID)
-        .then(() => {
-          return this.oneMsg('message:member-of')
-        })
+      let challenge = ''
+      this.zenroom.random(32)
         .then((result) => {
-          console.log(result)
-          resolve()
+          challenge = result
+          return this.wallet.get('contacts', { roomId: roomId })
         })
-        .catch((e) => {
-          console.log(e)
+        .then((room) => {
+          if (!room) {
+            resolve(false)
+          } else {
+            this.sendAction('member-of', 0, 'member-of', 1, { challenge }, roomId)
+              .then(() => {
+                return this.oneMsg('message:member-of')
+              })
+              .then(async (result) => {
+                const pubKey = {}
+                const key = await this.blockchain.getActualDidKey(didValue(room.did))
+                pubKey[room.did] = { public_key: key }
+                const check = await this.zenroom.checkSignature(room.did, pubKey, result.payload.signature, this.wallet.info.did)
+                if (check.signature === 'correct') {
+                  const payload = {
+                    did: this.wallet.info.did,
+                    extra,
+                    roleName,
+                    member: this.wallet.data.credentials[0].credential,
+                    publicKey: this.wallet.info.keyPair[this.wallet.info.did].keypair.public_key
+                  }
+                  return this.sendAction('member-of', result.threadId, 'member-of', 1, payload, roomId)
+                } else {
+                  resolve(false)
+                }
+              })
+              .then(async (result) => {
+                return this.oneMsg('message:member-of')
+              })
+              .then(async (result) => {
+                resolve(true)
+              })
+              .catch((e) => {
+                console.log(e)
+              })
+          }
+        })
+    })
+  }
+
+  /**
+   * memberOfConfirm.
+   *
+   * @param {string} roomId Contact Identifier
+   * @param {string} secretCode secret Code
+   */
+  async memberOfConfirm (roomId, secretCode) {
+    return new Promise((resolve) => {
+      this.wallet.get('contacts', { roomId: roomId })
+        .then((room) => {
+          if (!room) resolve(false)
+          else {
+            this.sendAction('member-of-confirm', 0, 'member-of-confirm', 1, { secretCode }, roomId)
+              .then(() => {
+                return this.oneMsg('message:member-of-confirm')
+              })
+              .then(async (result) => {
+                if (result.payload.msg === 'member verified') {
+                  this.wallet.update('contacts', { roomId: roomId }, { status: 'verified' })
+                  this.wallet.add('credentials', result.payload.credential)
+                  resolve(result.payload.msg)
+                } else {
+                  resolve(result.payload.msg)
+                }
+              })
+          }
         })
     })
   }
@@ -199,7 +259,6 @@ export default class Lorena extends EventEmitter {
                 roomId: element.roomId,
                 alias: '',
                 did: '',
-                didMethod: '',
                 matrixUser: element.sender,
                 status: 'incoming'
               })
@@ -266,7 +325,7 @@ export default class Lorena extends EventEmitter {
    * @param {number} timeout for the call
    * @returns {Promise} Promise with the result
    */
-  oneMsg (msg, timeout = 10000) {
+  oneMsg (msg, timeout = 5000) {
     return Promise.race(
       [
         new Promise((resolve) => {
@@ -274,7 +333,7 @@ export default class Lorena extends EventEmitter {
             resolve(data)
           })
         }),
-        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout')), timeout))
+        new Promise((resolve) => setTimeout(() => resolve('timeout'), timeout))
       ]
     )
   }
@@ -309,75 +368,20 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * Does the handshake
-   *
-   * @param {string} roomID to connect TO
-   * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
-   * @returns {boolean} result
-   */
-  async handshake (roomID, threadId = undefined) {
-    // use the threadId if provided, otherwise use the common one
-    if (threadId === undefined) {
-      threadId = this.threadId++
-    }
-    const did = this.wallet.info.did
-    const username = this.wallet.info.username
-    const random = await this.zenroom.random()
-    const pubKey = {}
-    let handshake
-
-    // TODO: Connect to DID (NOT ROOMID)
-
-    return new Promise((resolve, reject) => {
-      this.sendAction('contact-handshake', 0, 'handshake', threadId, { challenge: random }, roomID)
-        .then(() => {
-          return this.oneMsg('message:handshake')
-        })
-        .then((result) => {
-          handshake = result
-          this.blockchain.getActualDidKey(handshake.payload.did)
-        })
-        .then(async (key) => {
-          pubKey[did] = { public_key: key }
-          const check = await this.zenroom.checkSignature(did, pubKey, handshake.payload.signature, did)
-          const buffer64 = Buffer.from(random).toString('base64').slice(0, -1)
-          const signOk = (check.signature === 'correct') && (handshake.payload.signature[did].draft === buffer64)
-          if (signOk) {
-            const signature = await this.zenroom.signMessage(username, this.wallet.info.keyPair, handshake.payload.challenge)
-            return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: signature, keyPair: this.wallet.info.keyPair, username: username })
-          } else {
-            return this.sendAction('contact-handshake', handshake.threadId, 'handshake', threadId, { signature: 'incorrect' })
-          }
-        })
-        .then(() => {
-          return this.oneMsg('message:handshake')
-        })
-        .then(async (received) => {
-          // ADD CONTACT
-          // this.wallet.add('credentials', received.payload.credential)
-          resolve(true)
-        })
-        .catch((e) => {
-          error(e)
-          reject(new Error(e))
-        })
-    })
-  }
-
-  /**
    * Call a recipe, using the intrinsic threadId adn get back the single message
    *
    * @param {string} recipe name
    * @param {*} payload to send with recipe
+   * @param {string} roomId room ID
    * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
    * @returns {Promise} of message returned
    */
-  async callRecipe (recipe, payload = {}, threadId = undefined) {
+  async callRecipe (recipe, payload = {}, roomId, threadId = undefined) {
     // use the threadId if provided, otherwise use the common one
-    if (threadId === undefined) {
+    if (threadId === undefined || threadId === 0) {
       threadId = this.threadId++
     }
-    await this.sendAction(recipe, 0, recipe, threadId, payload)
+    await this.sendAction(recipe, 0, recipe, threadId, payload, roomId)
     return this.oneMsg(`message:${recipe}`)
   }
 
@@ -396,11 +400,13 @@ export default class Lorena extends EventEmitter {
             roomId,
             alias: '',
             did: did,
-            didMethod: '',
             matrixUser,
             status: 'invited'
           })
-          resolve()
+          resolve(true)
+        })
+        .catch(() => {
+          resolve(false)
         })
     })
   }
@@ -424,7 +430,6 @@ export default class Lorena extends EventEmitter {
       }
       this.sendAction('credential-get', 0, 'credential-ask', threadId, payload, roomId)
         .then(() => {
-          console.log('ASKED')
           resolve(true)
         })
     })
@@ -443,7 +448,6 @@ export default class Lorena extends EventEmitter {
             roomId,
             alias: '',
             did: '',
-            didMethod: '',
             matrixUser: '',
             status: 'invited'
           })
