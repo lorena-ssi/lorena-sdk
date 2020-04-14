@@ -181,7 +181,6 @@ export default class Lorena extends EventEmitter {
   async memberOfConfirm (roomId, secretCode) {
     return new Promise((resolve) => {
       const room = this.wallet.get('contacts', { roomId: roomId })
-
       if (!room) resolve(false)
       else {
         this.sendAction('member-of-confirm', 0, 'member-of-confirm', 1, { secretCode }, roomId)
