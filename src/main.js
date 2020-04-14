@@ -180,25 +180,24 @@ export default class Lorena extends EventEmitter {
    */
   async memberOfConfirm (roomId, secretCode) {
     return new Promise((resolve) => {
-      this.wallet.get('contacts', { roomId: roomId })
-        .then((room) => {
-          if (!room) resolve(false)
-          else {
-            this.sendAction('member-of-confirm', 0, 'member-of-confirm', 1, { secretCode }, roomId)
-              .then(() => {
-                return this.oneMsg('message:member-of-confirm')
-              })
-              .then(async (result) => {
-                if (result.payload.msg === 'member verified') {
-                  this.wallet.update('contacts', { roomId: roomId }, { status: 'verified' })
-                  this.wallet.add('credentials', result.payload.credential)
-                  resolve(result.payload.msg)
-                } else {
-                  resolve(result.payload.msg)
-                }
-              })
-          }
-        })
+      const room = this.wallet.get('contacts', { roomId: roomId })
+
+      if (!room) resolve(false)
+      else {
+        this.sendAction('member-of-confirm', 0, 'member-of-confirm', 1, { secretCode }, roomId)
+          .then(() => {
+            return this.oneMsg('message:member-of-confirm')
+          })
+          .then(async (result) => {
+            if (result.payload.msg === 'member verified') {
+              this.wallet.update('contacts', { roomId: roomId }, { status: 'verified' })
+              this.wallet.add('credentials', result.payload.credential)
+              resolve(result.payload.msg)
+            } else {
+              resolve(result.payload.msg)
+            }
+          })
+      }
     })
   }
 
