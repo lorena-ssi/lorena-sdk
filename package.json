@@ -1,6 +1,6 @@
 {
   "name": "@lorena-ssi/lorena-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Lorena Client",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "MIT",
@@ -24,7 +24,7 @@
     "@lorena-ssi/credential-lib": "^1.0.10",
     "@lorena-ssi/matrix-lib": "^1.0.9",
     "@lorena-ssi/substrate-lib": "^1.2.1",
-    "@lorena-ssi/wallet-lib": "^1.0.1",
+    "@lorena-ssi/wallet-lib": "^1.0.2",
     "@lorena-ssi/zenroom-lib": "^1.4.7",
     "debug": "^4.1.1",
     "esm": "^3.2.25"
