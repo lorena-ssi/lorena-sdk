@@ -5,7 +5,7 @@ const Blockchain = require('@lorena-ssi/substrate-lib')
 
 const { EventEmitter } = require('events')
 const log = require('debug')
-const debug = log('did:debug:cli')
+const debug = log('did:debug:sdk')
 
 const didValue = (did) => {
   const didValue = did.split(':')
@@ -122,9 +122,9 @@ export default class Lorena extends EventEmitter {
    * @param {string} roomId Contact Identifier
    * @param {string} extra Extra information
    * @param {string} roleName Name fo the role we ask for
-   * @returns {Promise} Result of calling recipr member-of
+   * @returns {Promise} Result of calling recipe member-of
    */
-  memberOf (roomId, extra, roleName) {
+  async memberOf (roomId, extra, roleName) {
     return new Promise((resolve) => {
       let challenge = ''
       this.zenroom.random(32)
@@ -134,15 +134,23 @@ export default class Lorena extends EventEmitter {
         })
         .then((room) => {
           if (!room) {
-            resolve(false)
+            debug(`did:debug:sdk:memberOf: ${roomId} not found`)
+            throw new Error(`memberOf: Room ${roomId} not found`)
           } else {
             this.sendAction('member-of', 0, 'member-of', 1, { challenge }, roomId)
               .then(() => {
                 return this.oneMsg('message:member-of')
               })
               .then(async (result) => {
+                // debug(`memberOf: oneMsg returned ${result}`)
                 const pubKey = {}
                 const key = await this.blockchain.getActualDidKey(didValue(room.did))
+                // debug(`memberOf: getActualDidKey result ${key}`)
+                if (key === '') {
+                  console.log(key)
+                  debug(`memberOf: Public key not found for ${room.did}`)
+                  throw new Error(`Public key not found for ${room.did}`)
+                }
                 pubKey[room.did] = { public_key: key }
                 const check = await this.zenroom.checkSignature(room.did, pubKey, result.payload.signature, this.wallet.info.did)
                 if (check.signature === 'correct') {
@@ -155,19 +163,25 @@ export default class Lorena extends EventEmitter {
                   }
                   return this.sendAction('member-of', result.threadId, 'member-of', 1, payload, roomId)
                 } else {
-                  resolve(false)
+                  debug(`memberOf: checkSignature result ${check}`)
+                  throw new Error(`Signature did not match public key ${key}`)
                 }
               })
               .then(async (result) => {
                 return this.oneMsg('message:member-of')
               })
               .then(async (result) => {
+                // debug(`memberOf: oneMsg finally returned ${result}`)
                 resolve(true)
               })
               .catch((e) => {
                 console.log(e)
+                resolve(false)
               })
           }
+        }).catch((e) => {
+          console.log(e)
+          resolve(false)
         })
     })
   }
