@@ -195,9 +195,10 @@ export default class Lorena extends EventEmitter {
   async memberOfConfirm (roomId, secretCode) {
     return new Promise((resolve) => {
       const room = this.wallet.get('contacts', { roomId: roomId })
-
-      if (!room) resolve(false)
-      else {
+      if (!room) {
+        debug(`memberOfConfirm: room ${roomId} is not in contacts`)
+        resolve(false)
+      } else {
         this.sendAction('member-of-confirm', 0, 'member-of-confirm', 1, { secretCode }, roomId)
           .then(() => {
             return this.oneMsg('message:member-of-confirm')
@@ -403,6 +404,7 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} matrixUser Matrix user ID
    * @param {string} did DID
+   * @returns {Promise} Room ID created, or false
    */
   async createConnection (matrixUser, did) {
     const roomName = await this.zenroom.random(12)
@@ -416,9 +418,10 @@ export default class Lorena extends EventEmitter {
             matrixUser,
             status: 'invited'
           })
-          resolve(true)
+          resolve(roomId)
         })
-        .catch(() => {
+        .catch((e) => {
+          debug(`createConnection ${e}`)
           resolve(false)
         })
     })
