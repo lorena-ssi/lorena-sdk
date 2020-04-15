@@ -191,6 +191,7 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} roomId Contact Identifier
    * @param {string} secretCode secret Code
+   * @returns {Promise} result boolean true or thrown error
    */
   async memberOfConfirm (roomId, secretCode) {
     return new Promise((resolve) => {
@@ -207,9 +208,9 @@ export default class Lorena extends EventEmitter {
             if (result.payload.msg === 'member verified') {
               this.wallet.update('contacts', { roomId: roomId }, { status: 'verified' })
               this.wallet.add('credentials', result.payload.credential)
-              resolve(result.payload.msg)
+              resolve(true)
             } else {
-              resolve(result.payload.msg)
+              throw new Error(`memberOf: ${result.payload.message}`)
             }
           })
       }
@@ -217,7 +218,7 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * Connect to Lorena IDSpace.
+   * Connect to Lorena IDspace.
    */
   async connect () {
     if (this.ready === true) return true
