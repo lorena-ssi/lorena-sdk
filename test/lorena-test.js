@@ -1,14 +1,10 @@
-const Lorena = require('../src/main.js').default
-const Wallet = require('@lorena-ssi/wallet-lib').default
-const chai = require('chai')
-const mocha = require('mocha')
-const describe = mocha.describe
-const it = mocha.it
+import Lorena from '../src/index.js'
+import Wallet from '@lorena-ssi/wallet-lib'
+import chai, { expect, assert } from 'chai'
+import { describe, it } from 'mocha'
 // Configure chai
 chai.use(require('chai-as-promised'))
 chai.use(require('chai-spies'))
-const expect = chai.expect
-const assert = chai.assert
 
 const lorenaKeys = [
   'matrix',

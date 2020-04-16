@@ -1,19 +1,21 @@
 {
   "name": "@lorena-ssi/lorena-sdk",
-  "version": "1.0.5",
-  "description": "Lorena Client",
+  "version": "1.0.7",
+  "description": "Lorena SDK",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "MIT",
-  "main": "src/index.js",
-  "module": "src/main.js",
+  "main": "index.js",
+  "module": "src/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lorena-ssi/lorena-sdk.git"
   },
   "keywords": [
+    "lorena",
+    "identity",
+    "sdk",
     "npm",
     "node",
-    "identity",
     "javascript"
   ],
   "bugs": {
