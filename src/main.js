@@ -129,7 +129,7 @@ export default class Lorena extends EventEmitter {
   }
 
   /**
-   * Connect to Lorena IDSpace.
+   * Connect to Lorena IDspace.
    */
   async connect () {
     if (this.ready === true) return true

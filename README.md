@@ -63,7 +63,7 @@ Throws an error and emits `error` if fails.
 
 #### `connect(connectionstring)`
 
-Connect to Lorena IDSpace.
+Connect to Lorena IDspace.
 `connectionstring` is a concatenation of username-password-did
 
 Returns true if the connection is success
@@ -72,7 +72,7 @@ Throws an error and emits `error` if fails.
 
 #### `handshake()`
 
-Establishes a connection with the idspace, checking public-key signatures.
+Establishes a connection with the IDspace, checking public-key signatures.
 
 #### `callRecipe(recipe, { payloadText: 'text', payloadETC: 'ETC'})`
 
