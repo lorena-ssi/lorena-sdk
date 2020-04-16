@@ -411,7 +411,7 @@ export default class Lorena extends EventEmitter {
                   did: link.did,
                   keyPair: link.keyPair
                 })
-                resolve(result.msg)
+                resolve(result.payload.msg)
               })
               .catch((e) => {
                 console.log(e)
