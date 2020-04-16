@@ -47,14 +47,16 @@
     "husky": "^4.2.5",
     "mocha": "^7.1.1",
     "mocha-lcov-reporter": "^1.3.0",
-    "nyc": "^15.0.1"
+    "nyc": "^15.0.1",
+    "serve": "^11.3.0"
   },
   "scripts": {
     "coverage": "nyc npm run mocha && nyc report --reporter=html",
     "coveralls": "nyc npm run mocha && nyc report --reporter=text-lcov | coveralls",
+    "coverage:serve": "npm run coverage && serve coverage",
     "debug": "./pds 1",
     "lint": "eslint ./src ./test",
-    "lint-fix": "eslint ./src ./test --fix",
+    "lint:fix": "eslint ./src ./test --fix",
     "mocha": "mocha test --timeout 50000 --bail --require esm",
     "test": "npm run mocha"
   },
