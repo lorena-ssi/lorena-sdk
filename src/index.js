@@ -119,6 +119,7 @@ export default class Lorena extends EventEmitter {
             id: this.wallet.info.did,
             credential: signCredential
           })
+          this.emit('change')
           resolve(signCredential)
         })
     })
@@ -337,6 +338,7 @@ export default class Lorena extends EventEmitter {
         .then((roomId) => {
           link.roomId = roomId
           this.wallet.add('links', link)
+          this.emit('change')
           resolve(roomId)
         })
         .catch((e) => {
@@ -411,6 +413,7 @@ export default class Lorena extends EventEmitter {
                   did: link.did,
                   keyPair: link.keyPair
                 })
+                this.emit('change')
                 resolve(result.payload.msg)
               })
               .catch((e) => {
@@ -446,6 +449,7 @@ export default class Lorena extends EventEmitter {
             if (result.payload.msg === 'member verified') {
               this.wallet.update('links', { roomId: roomId }, { status: 'verified' })
               this.wallet.add('credentials', result.payload.credential)
+              this.emit('change')
               resolve(result.payload.msg)
             } else {
               resolve(result.payload.msg)
@@ -495,7 +499,10 @@ export default class Lorena extends EventEmitter {
             matrixUser: '',
             status: 'invited'
           })
-          resolve()
+          this.emit('change')
+          resolve(true)
+        }).catch((_e) => {
+          resolve(false)
         })
     })
   }
