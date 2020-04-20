@@ -72,22 +72,28 @@ export default class Lorena extends EventEmitter {
    * Locks (saves and encrypts) the wallet
    *
    * @param {string} password Wallet password
-   * @returns {object} Wallet info.
+   * @returns {boolean} success
    */
-  lock (password) {
-    this.emit('lock', password)
-    return this.wallet.lock(password)
+  async lock (password) {
+    const result = this.wallet.lock(password)
+    if (result) {
+      this.emit('lock', password)
+    }
+    return result
   }
 
   /**
    * UnLocks (open and decrypts) the wallet
    *
    * @param {string} password Wallet password
-   * @returns {object} Wallet info.
+   * @returns {boolean} success
    */
-  unlock (password) {
-    this.emit('unlock', password)
-    return this.wallet.unlock(password)
+  async unlock (password) {
+    const result = this.wallet.unlock(password)
+    if (result) {
+      this.emit('unlock', password)
+    }
+    return result
   }
 
   /**
