@@ -1,0 +1,15 @@
+{
+  "extension": [
+    ".js"
+  ],
+  "reporter": [
+    "lcov",
+    "text",
+    "html",
+    "json"
+  ],
+  "exclude": ["**/*/test*", "test/*", "coverage/*", ".eslintrc.js"],
+  "report-dir": "./coverage/node/",
+  "all": "true"
+}
+
