@@ -33,6 +33,15 @@ describe('Lorena API', function () {
     expect(lorena).to.include.all.keys(lorenaKeys)
   })
 
+  it('should not init wallet for an invalid network ', async () => {
+    await expect(lorena.initWallet('xxx')).to.be.rejectedWith(Error)
+  })
+
+  it('should init wallet for a valid network ', async () => {
+    const result = await lorena.initWallet('labdev')
+    expect(result.matrixServer).to.contain('labdev')
+  })
+
   // createUser is not yet implemented
   xit('should create a new Lorena user', async () => {
     const a = await lorena.createUser(username, password)
