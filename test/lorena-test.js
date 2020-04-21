@@ -30,13 +30,27 @@ describe('Lorena API', function () {
     expect(lorena).to.include.all.keys(lorenaKeys)
   })
 
-  it('should not init wallet for an invalid network ', async () => {
+  it('should not init wallet for an invalid network', async () => {
     await expect(lorena.initWallet('xxx')).to.be.rejectedWith(Error)
   })
 
-  it('should init wallet for a valid network ', async () => {
+  it('should init wallet for a valid network', async () => {
     const result = await lorena.initWallet('labdev')
     expect(result.matrixServer).to.contain('labdev')
+  })
+
+  it('should unlock wallet', (done) => {
+    lorena.on('unlocked', () => {
+      done()
+    })
+    lorena.unlock('test')
+  })
+
+  it('should lock wallet', (done) => {
+    lorena.on('locked', () => {
+      done()
+    })
+    lorena.lock('test')
   })
 
   it('should have these private methods', () => {
