@@ -75,7 +75,7 @@ export default class Lorena extends EventEmitter {
    * @returns {boolean} success
    */
   async lock (password) {
-    const result = this.wallet.lock(password)
+    const result = await this.wallet.lock(password)
     if (result) {
       this.emit('locked', password)
     }
@@ -89,7 +89,7 @@ export default class Lorena extends EventEmitter {
    * @returns {boolean} success
    */
   async unlock (password) {
-    const result = this.wallet.unlock(password)
+    const result = await this.wallet.unlock(password)
     if (result) {
       this.emit('unlocked', password)
     }
