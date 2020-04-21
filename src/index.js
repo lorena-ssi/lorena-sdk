@@ -2,6 +2,7 @@ import Matrix from '@lorena-ssi/matrix-lib'
 import Zenroom from '@lorena-ssi/zenroom-lib'
 import Credential from '@lorena-ssi/credential-lib'
 import Blockchain from '@lorena-ssi/substrate-lib'
+import LorenaDidResolver from '@lorena-ssi/did-resolver'
 import { EventEmitter } from 'events'
 import log from 'debug'
 
@@ -42,12 +43,16 @@ export default class Lorena extends EventEmitter {
    * @param {string} network Network the wallet is talking to.
    */
   async initWallet (network) {
-    this.wallet.info.blockchainServer = 'wss://' + network + '.substrate.lorena.tech'
-    this.wallet.info.matrixFederation = network + '.matrix.lorena.tech'
-    this.wallet.info.matrixServer = 'https://' + this.wallet.info.matrixFederation
-    this.matrix = new Matrix(this.wallet.info.matrixServer)
-
     return new Promise((resolve, reject) => {
+      const info = LorenaDidResolver.getInfoForNetwork(network)
+      if (!info) {
+        reject(new Error(`Unknown network ${network}`))
+        return
+      }
+      this.wallet.info.blockchainServer = info.blockchainEndpoint
+      this.wallet.info.matrixServer = info.matrixEndpoint
+      this.matrix = new Matrix(this.wallet.info.matrixServer)
+
       this.zenroom.random(12).then((matrixUser) => {
         this.wallet.info.matrixUser = matrixUser.toLowerCase()
         return this.zenroom.random(12)
