@@ -218,8 +218,8 @@ export default class Lorena extends EventEmitter {
               this.emit('message', parsedElement)
               break
           }
-        } catch (_e) {
-          console.log(_e)
+        } catch (error) {
+          debug('%O', error)
           this.emit('warning', 'element unknown')
         }
       })
@@ -269,7 +269,7 @@ export default class Lorena extends EventEmitter {
             resolve(data)
           })
         }),
-        new Promise((resolve) => setTimeout(() => resolve('timeout'), timeout))
+        new Promise((resolve) => setTimeout(() => resolve(false), timeout))
       ]
     )
   }
@@ -363,7 +363,7 @@ export default class Lorena extends EventEmitter {
    * @returns {Promise} Result of calling recipe member-of
    */
   async memberOf (roomId, extra, roleName) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       let challenge = ''
       let link = {}
       this.zenroom.random(32)
@@ -382,6 +382,7 @@ export default class Lorena extends EventEmitter {
                 return this.oneMsg('message:member-of')
               })
               .then(async (result) => {
+                if (result === false) throw (new Error('Timeout'))
                 const key = await this.blockchain.getActualDidKey(didValue(link.linkDid))
                 // debug(`memberOf: getActualDidKey result ${key}`)
                 if (key === '') {
@@ -423,13 +424,11 @@ export default class Lorena extends EventEmitter {
                 resolve(result.payload.msg)
               })
               .catch((e) => {
-                console.log(e)
-                resolve(false)
+                reject(new Error('member-of failed'))
               })
           }
         }).catch((e) => {
-          console.log(e)
-          resolve(false)
+          reject(new Error('member-of failed'))
         })
     })
   }
@@ -441,7 +440,7 @@ export default class Lorena extends EventEmitter {
    * @param {string} secretCode secret Code
    */
   async memberOfConfirm (roomId, secretCode) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const room = this.wallet.get('links', { roomId: roomId })
       if (!room) {
         debug(`memberOfConfirm: room ${roomId} is not in links`)
@@ -452,6 +451,7 @@ export default class Lorena extends EventEmitter {
             return this.oneMsg('message:member-of-confirm')
           })
           .then(async (result) => {
+            if (result === false) throw (new Error('Timeout'))
             if (result.payload.msg === 'member verified') {
               this.wallet.update('links', { roomId: roomId }, { status: 'verified' })
               this.wallet.add('credentials', result.payload.credential)
@@ -460,6 +460,9 @@ export default class Lorena extends EventEmitter {
             } else {
               resolve(result.payload.msg)
             }
+          })
+          .catch(() => {
+            reject(new Error('member-of-confirm failed'))
           })
       }
     })
