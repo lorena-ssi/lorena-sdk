@@ -9,7 +9,7 @@
     "json"
   ],
   "exclude": ["**/*/test*", "test/*", "coverage/*", ".eslintrc.js"],
-  "report-dir": "./coverage/node/",
+  "report-dir": "./coverage/",
   "all": "true"
 }
 
