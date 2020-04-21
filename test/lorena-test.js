@@ -17,8 +17,16 @@ const lorenaKeys = [
 ]
 
 describe('Lorena API', function () {
-  let lorena
-  const wallet = new Wallet('test')
+  let lorena, wallet
+  const password = 'test'
+
+  it('should prepare the wallet', async () => {
+    wallet = new Wallet('lorena-sdk-test')
+    await wallet.delete()
+    const result = await wallet.unlock(password)
+    expect(result).to.be.false
+    await wallet.lock(password)
+  })
 
   it('should construct a Lorena class', async () => {
     lorena = new Lorena(wallet)
@@ -43,14 +51,14 @@ describe('Lorena API', function () {
     lorena.on('unlocked', () => {
       done()
     })
-    lorena.unlock('test')
+    lorena.unlock(password)
   })
 
   it('should lock wallet', (done) => {
     lorena.on('locked', () => {
       done()
     })
-    lorena.lock('test')
+    lorena.lock(password)
   })
 
   it('should have these private methods', () => {

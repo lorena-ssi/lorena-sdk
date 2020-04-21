@@ -1,9 +1,10 @@
 language: node_js
+cache:
+  npm: false
 node_js:
-  - "v12.16.1"
+  - "v12.16.2"
 install:
   - npm install
 script:
   - npm run lint
-after_script:
   - npm run coveralls
