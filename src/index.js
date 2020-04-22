@@ -3,6 +3,7 @@ import Zenroom from '@lorena-ssi/zenroom-lib'
 import Credential from '@lorena-ssi/credential-lib'
 import Blockchain from '@lorena-ssi/substrate-lib'
 import LorenaDidResolver from '@lorena-ssi/did-resolver'
+import { Resolver } from 'did-resolver'
 import { EventEmitter } from 'events'
 import log from 'debug'
 
@@ -330,22 +331,29 @@ export default class Lorena extends EventEmitter {
    * Open Connection with another user.
    *
    * @param {string} did DID
-   * @param {string} matrixUser Matrix user ID
+   * @param {string} matrixUrl Matrix user ID/Url
    * @returns {Promise} Room ID created, or false
    */
-  async createConnection (did, matrixUser) {
+  async createConnection (did, matrixUrl) {
+    if (matrixUrl === undefined) {
+      const lorResolver = LorenaDidResolver.getResolver()
+      const resolver = new Resolver(lorResolver)
+      const diddoc = await resolver.resolve(did)
+      matrixUrl = diddoc.service[0].serviceEndpoint
+    }
+
     const link = {
       did: false,
       linkDid: did,
       roomId: '',
       roomName: await this.zenroom.random(12),
       keyPair: false,
-      matrixUser,
+      matrixUrl,
       status: 'invited',
       alias: ''
     }
     return new Promise((resolve, reject) => {
-      this.matrix.createConnection(link.roomName, matrixUser)
+      this.matrix.createConnection(link.roomName, matrixUrl)
         .then((roomId) => {
           link.roomId = roomId
           this.wallet.add('links', link)
