@@ -348,7 +348,7 @@ export default class Lorena extends EventEmitter {
       roomId: '',
       roomName: await this.zenroom.random(12),
       keyPair: false,
-      matrixUrl,
+      matrixUser: matrixUrl,
       status: 'invited',
       alias: ''
     }
