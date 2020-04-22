@@ -30,6 +30,7 @@
     "@lorena-ssi/wallet-lib": "^1.1.0",
     "@lorena-ssi/zenroom-lib": "^1.5.0",
     "debug": "^4.1.1",
+    "did-resolver": "^1.1.0",
     "esm": "^3.2.25"
   },
   "devDependencies": {
