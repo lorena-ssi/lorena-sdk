@@ -80,7 +80,7 @@ Calls a recipe and returns the payload. A wrapper around `sendAction`.
 
 Throws an error and emits `error` if fails.
 
-#### `sendAction(recipe, recipeId, threadRef, thReadId, payload)`
+#### `sendAction(recipe, recipeId, threadRef, thReadId, payload, linkId)`
 
 Sends an action to another DID.
 
@@ -93,6 +93,8 @@ Sends an action to another DID.
 `threadId` Local recipe Id
 
 `payload` Information to send
+
+`linkId` Connection to use
 
 ### `on(message[:threadRef, :type], [function(payload)])`
 
