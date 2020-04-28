@@ -1,5 +1,6 @@
 .eslintrc.js
 .gitlab-ci.yml
+.nycrc
 .nyc_output/
 .travis.yml
 .vscode/
