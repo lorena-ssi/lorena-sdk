@@ -1,7 +1,8 @@
 import Matrix from '@lorena-ssi/matrix-lib'
 import Zenroom from '@lorena-ssi/zenroom-lib'
 import Credential from '@lorena-ssi/credential-lib'
-import Blockchain from '@lorena-ssi/substrate-lib'
+import SubstrateBlockchain from '@lorena-ssi/substrate-lib'
+import MaxonrowBlockchain from '@lorena-ssi/maxonrow-lib'
 import LorenaDidResolver from '@lorena-ssi/did-resolver'
 import { Resolver } from 'did-resolver'
 import { EventEmitter } from 'events'
@@ -50,6 +51,10 @@ export default class Lorena extends EventEmitter {
         reject(new Error(`Unknown network ${network}`))
         return
       }
+      if (info.symbol) {
+        this.wallet.info.symbol = info.symbol
+      }
+      this.wallet.info.type = info.type
       this.wallet.info.blockchainServer = info.blockchainEndpoint
       this.wallet.info.matrixServer = info.matrixEndpoint
       this.matrix = new Matrix(this.wallet.info.matrixServer)
@@ -152,8 +157,38 @@ export default class Lorena extends EventEmitter {
         this.matrix = new Matrix(this.wallet.info.matrixServer)
         await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
 
-        // Connect to Blockchain.
-        this.blockchain = new Blockchain(this.wallet.info.blockchainServer)
+        const nodeProvider = {
+          connection: {
+            url: this.wallet.info.blockchainServer,
+            timeout: 60000
+          },
+          trace: {
+            silent: true,
+            silentRpc: true
+          },
+          chainId: 'maxonrow-chain',
+          name: 'mxw',
+        // Only necessary to create Tokens
+        nonFungibleToken: {
+          provider: process.env.ProviderWalletMnemonic || 'dunno',
+          issuer: process.env.IssuerWalletMnemonic || 'dunno',
+          middleware: process.env.MiddlewareWalletMnemonic || 'dunno',
+          feeCollector: process.env.FeeCollectorWalletAddr || 'dunno'
+          }
+        }
+
+        // Connect to SubstrateBlockchain.
+        switch(this.wallet.info.type) {
+          case 'maxonrow':
+            this.blockchain = new MaxonrowBlockchain(this.wallet.info.symbol, nodeProvider)
+            break
+          case 'substrate':
+            this.blockchain = new SubstrateBlockchain(this.wallet.info.blockchainServer)
+            break
+          default:
+            throw new Error(`Unsupported network ${this.context.info.network}`)
+        }
+
         await this.blockchain.connect()
 
         // Ready to use events.
