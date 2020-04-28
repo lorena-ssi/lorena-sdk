@@ -168,17 +168,17 @@ export default class Lorena extends EventEmitter {
           },
           chainId: 'maxonrow-chain',
           name: 'mxw',
-        // Only necessary to create Tokens
-        nonFungibleToken: {
-          provider: process.env.ProviderWalletMnemonic || 'dunno',
-          issuer: process.env.IssuerWalletMnemonic || 'dunno',
-          middleware: process.env.MiddlewareWalletMnemonic || 'dunno',
-          feeCollector: process.env.FeeCollectorWalletAddr || 'dunno'
+          // Only necessary to create Tokens
+          nonFungibleToken: {
+            provider: process.env.ProviderWalletMnemonic || 'dunno',
+            issuer: process.env.IssuerWalletMnemonic || 'dunno',
+            middleware: process.env.MiddlewareWalletMnemonic || 'dunno',
+            feeCollector: process.env.FeeCollectorWalletAddr || 'dunno'
           }
         }
 
         // Connect to SubstrateBlockchain.
-        switch(this.wallet.info.type) {
+        switch (this.wallet.info.type) {
           case 'maxonrow':
             this.blockchain = new MaxonrowBlockchain(this.wallet.info.symbol, nodeProvider)
             break
