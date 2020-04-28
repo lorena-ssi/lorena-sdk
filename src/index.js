@@ -267,7 +267,7 @@ export default class Lorena extends EventEmitter {
    * @param {number} timeout for the call
    * @returns {Promise} Promise with the result
    */
-  oneMsg (msg, timeout = 5000) {
+  oneMsg (msg, timeout = 10000) {
     return Promise.race(
       [
         new Promise((resolve) => {
