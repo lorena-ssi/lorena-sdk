@@ -148,8 +148,11 @@ export default class Lorena extends EventEmitter {
 
   /**
    * Connect to Lorena IDspace.
+   *
+   * @param {string=} network The network to which we will connect
+   * @returns {boolean} success (or errors thrown)
    */
-  async connect () {
+  async connect (network = undefined) {
     if (this.ready === true) return true
     else if (this.wallet.info.matrixUser) {
       try {
@@ -161,9 +164,9 @@ export default class Lorena extends EventEmitter {
         // If we know the DID, get the info for the network of the did
         if (this.wallet.info.did && this.wallet.info.did !== '') {
           info = LorenaDidResolver.getInfoForDid(this.wallet.info.did)
-        // If we don't know the did, get it for the network
-        } else if (this.wallet.info.network) {
-          info = LorenaDidResolver.getInfoForNetwork(this.wallet.info.network)
+        // If we don't know the did, get it for the network already specified (or in arguments)
+        } else if (this.wallet.info.network || network) {
+          info = LorenaDidResolver.getInfoForNetwork(this.wallet.info.network || network)
         // old wallets don't have a network, but they do have a blockchain
         } else if (this.wallet.info.blockchainServer) {
           // Take the network name from the first position in the hostname
