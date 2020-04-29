@@ -23,9 +23,9 @@
   },
   "homepage": "https://github.com/lorena-ssi/lorena-sdk#readme",
   "dependencies": {
-    "@lorena-ssi/credential-lib": "^1.0.14",
-    "@lorena-ssi/did-resolver": "^0.2.2",
-    "@lorena-ssi/matrix-lib": "^1.0.11",
+    "@lorena-ssi/credential-lib": "^1.1.0",
+    "@lorena-ssi/did-resolver": "^0.2.3",
+    "@lorena-ssi/matrix-lib": "^1.0.13",
     "@lorena-ssi/maxonrow-lib": "^1.2.0",
     "@lorena-ssi/substrate-lib": "^3.0.0",
     "@lorena-ssi/wallet-lib": "^1.1.0",

@@ -255,6 +255,7 @@ export default class Lorena extends EventEmitter {
             default:
               parsedElement = JSON.parse(element.payload.body)
               parsedElement.roomId = element.roomId
+              debug(`loop element.roomId: ${element.roomId}`)
               this.emit(`message:${parsedElement.recipe}`, parsedElement)
               this.emit('message', parsedElement)
               break
@@ -273,25 +274,31 @@ export default class Lorena extends EventEmitter {
    * @returns {*} events
    */
   async getMessages () {
-    let result = await this.matrix.events(this.nextBatch)
-    // If empty (try again)
-    if (result.events.length === 0) {
-      result = await this.matrix.events(this.nextBatch)
+    try {
+      const result = await this.matrix.events(this.nextBatch)
+      this.nextBatch = result.nextBatch
+      return (result.events)
+    } catch (e) {
+      // If there was an error, log it and return empty events for continuation
+      debug(e)
+      return []
     }
-    this.nextBatch = result.nextBatch
-    return (result.events)
   }
 
   /**
    * process Outgoing queue of messages
    */
   async processQueue () {
-    if (this.queue.length > 0) {
-      const sendPayload = JSON.stringify(this.queue.pop())
-      await this.matrix.sendMessage(this.wallet.info.roomId, 'm.action', sendPayload)
-    }
-    if (this.queue.length === 0) {
-      this.processing = false
+    try {
+      if (this.queue.length > 0) {
+        const sendPayload = JSON.stringify(this.queue.pop())
+        await this.matrix.sendMessage(this.wallet.info.roomId, 'm.action', sendPayload)
+      }
+      if (this.queue.length === 0) {
+        this.processing = false
+      }
+    } catch (e) {
+      debug(e)
     }
   }
 
