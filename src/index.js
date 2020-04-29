@@ -498,11 +498,11 @@ export default class Lorena extends EventEmitter {
                 resolve(result.payload.msg)
               })
               .catch((e) => {
-                reject(new Error('member-of failed'))
+                reject(e)
               })
           }
         }).catch((e) => {
-          reject(new Error('member-of failed'))
+          reject(e)
         })
     })
   }
@@ -535,8 +535,8 @@ export default class Lorena extends EventEmitter {
               resolve(result.payload.msg)
             }
           })
-          .catch(() => {
-            reject(new Error('member-of-confirm failed'))
+          .catch((e) => {
+            reject(e)
           })
       }
     })
