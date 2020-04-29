@@ -593,6 +593,39 @@ export default class Lorena extends EventEmitter {
     })
   }
 
+  validateCertificate (json) {
+    return new Promise((resolve) => {
+      try {
+        // const verified = {}
+        const credential = JSON.parse(json)
+        console.log(credential)
+
+        // Get issuer
+        // verified.issuer = did
+
+        // get Publick Key -> Resolve from Blockchain
+        // verified.network =
+        // verified.pubKey =
+        // verified.checkIssuer =
+
+        // Verify Signature -> The certificate is signed by the Issuer
+        // verified.checkCertificateSignature =
+
+        // IPFS DAG : Load Credential
+        // verified.credential =
+
+        // Verify Credencial -> The credential is signed by the Issuer
+        // verified.checkCredentialSignature =
+
+        // const valid = verified.checkIssuer && verified.checkCertificateSignature && verified.checkCredentialSignature
+        const valid = false
+        resolve({ success: valid })
+      } catch (error) {
+        resolve(false)
+      }
+    })
+  }
+
   /**
    * Overrides `on` from EventEmitter to dispatch ready if this.ready.
    *

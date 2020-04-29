@@ -75,4 +75,11 @@ describe('Lorena API', function () {
   it('should close connections', () => {
     lorena.disconnect()
   })
+
+  /* it('should validate a Credential', async () => {
+    const lorenaDisconnected = new Lorena()
+    const json = '{"@context":["https://www.w3.org/2018/credentials/v1"],"type":["VerifiableCredential","Achievement"],"issuer":"did:lor:labtest:ZGtaUFRIaHlOQzEzUmpoSVlrdzJZbTkz","issuanceDate":"2020-04-29T17:13:41.702Z","credentialSubject":{"@type":"Achievement","id":"did:lor:labtest:bafyreicnvfhomydwysklfrajh227ewzkqvltzfhmk62dxtwp422lbrz2ye;id:21","course":{"id":"did:lor:labtest:bafyreicnvfhomydwysklfrajh227ewzkqvltzfhmk62dxtwp422lbrz2ye"},"agent":{"@type":"Person","id":"","name":"Alex Puig","email":"alex@caelumlabs.com"},"expirationDate":""},"proof":{"type":"Curve448-Goldilocks","proofPurpose":"assertionMethod","verificationMethod":"","signature":{"did:lor:labtest:ZGtaUFRIaHlOQzEzUmpoSVlrdzJZbTkz":{"draft":"dW5kZWZpbmVk","signature":{"r":"NJWPQtNuEvtI7GpE-k5kdBu1nNMELncfYMIjPuRgioVHlF5ugZKNuIypAYza-monnMAgOVtWyMM","s":"LpviDh2knWE26v9GIrETrYXzxiQma3LWke4jJq5S7rxWxgi_wbKVIxNzEl3XSrF-TpoHcUnr3eU"}}}}}'
+    const res = await lorenaDisconnected.validateCertificate(json)
+    expect(typeof res).to.equal('object')
+  }) */
 })
