@@ -47,6 +47,11 @@ describe('Lorena API', function () {
     expect(result.matrixServer).to.contain('labdev')
   })
 
+  it('should connect', async () => {
+    const result = await lorena.connect()
+    expect(result).to.be.true
+  })
+
   it('should unlock wallet', (done) => {
     lorena.on('unlocked', () => {
       done()
