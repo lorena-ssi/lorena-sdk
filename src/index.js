@@ -1,8 +1,6 @@
 import Matrix from '@lorena-ssi/matrix-lib'
 import Zenroom from '@lorena-ssi/zenroom-lib'
 import Credential from '@lorena-ssi/credential-lib'
-import SubstrateBlockchain from '@lorena-ssi/substrate-lib'
-import MaxonrowBlockchain from '@lorena-ssi/maxonrow-lib'
 import LorenaDidResolver from '@lorena-ssi/did-resolver'
 import { Resolver } from 'did-resolver'
 import { EventEmitter } from 'events'
@@ -10,10 +8,6 @@ import log from 'debug'
 
 const debug = log('did:debug:sdk')
 
-const didValue = (did) => {
-  const didValue = did.split(':')
-  return didValue[3]
-}
 /**
  * Lorena SDK - Class
  */
@@ -29,7 +23,6 @@ export default class Lorena extends EventEmitter {
     this.zenroom = new Zenroom(opts.silent || false)
     this.wallet = walletHandler
     this.matrix = false
-    this.blockchain = false
     this.recipeId = 0
     this.queue = []
     this.processing = false
@@ -37,6 +30,7 @@ export default class Lorena extends EventEmitter {
     this.nextBatch = ''
     this.disconnecting = false
     this.threadId = 0
+    this.resolver = false
   }
 
   /**
@@ -116,15 +110,6 @@ export default class Lorena extends EventEmitter {
     this.wallet.info.person = person.subject
   }
 
-  /* this.zenroom.randomDID()
-        .then((did) => {
-          this.wallet.info.did = 'did:lor:' + network + ':' + did
-          return this.zenroom.newKeyPair(this.wallet.info.did)
-        })
-        .then((keyPair) => {
-          this.wallet.info.keyPair = keyPair
-          return */
-
   async signCredential (subject) {
     return new Promise((resolve) => {
       // Sign the persona
@@ -149,69 +134,15 @@ export default class Lorena extends EventEmitter {
   /**
    * Connect to Lorena IDspace.
    *
-   * @param {string=} network The network to which we will connect
    * @returns {boolean} success (or errors thrown)
    */
-  async connect (network = undefined) {
+  async connect () {
     if (this.ready === true) return true
     else if (this.wallet.info.matrixUser) {
       try {
         // Connect to Matrix.
         this.matrix = new Matrix(this.wallet.info.matrixServer)
         await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
-
-        let info
-        // If we know the DID, get the info for the network of the did
-        if (this.wallet.info.did && this.wallet.info.did !== '') {
-          info = LorenaDidResolver.getInfoForDid(this.wallet.info.did)
-        // If we don't know the did, get it for the network already specified (or in arguments)
-        } else if (this.wallet.info.network || network) {
-          info = LorenaDidResolver.getInfoForNetwork(this.wallet.info.network || network)
-        // old wallets don't have a network, but they do have a blockchain
-        } else if (this.wallet.info.blockchainServer) {
-          // Take the network name from the first position in the hostname
-          const network = this.wallet.info.blockchainServer.split('//')[1].split('.')[0]
-          info = LorenaDidResolver.getInfoForNetwork(network)
-          this.wallet.info.network = network
-        // If we don't know the did or the network we're in trouble
-        } else {
-          debug('connect: unknown network type')
-          throw new Error('Connect: Unknown network type')
-        }
-
-        const nodeProvider = {
-          connection: {
-            url: info.blockchainEndpoint,
-            timeout: 60000
-          },
-          trace: {
-            silent: true,
-            silentRpc: true
-          },
-          chainId: 'maxonrow-chain',
-          name: 'mxw',
-          // Only necessary to create Tokens
-          nonFungibleToken: {
-            provider: 'unknown',
-            issuer: 'unknown',
-            middleware: 'unknown',
-            feeCollector: 'unknown'
-          }
-        }
-
-        // Connect to Blockchain.
-        switch (info.type) {
-          case 'maxonrow':
-            this.blockchain = new MaxonrowBlockchain(info.symbol, nodeProvider)
-            break
-          case 'substrate':
-            this.blockchain = new SubstrateBlockchain(info.blockchainEndpoint)
-            break
-          default:
-            throw new Error(`Unsupported network type ${info.type}`)
-        }
-
-        await this.blockchain.connect()
 
         // Ready to use events.
         const events = await this.matrix.events('')
@@ -236,9 +167,6 @@ export default class Lorena extends EventEmitter {
   disconnect () {
     this.emit('disconnecting')
     this.disconnecting = true
-    if (this.blockchain) {
-      this.blockchain.disconnect()
-    }
   }
 
   /**
@@ -391,19 +319,37 @@ export default class Lorena extends EventEmitter {
     return this.oneMsg(`message:${recipe}`)
   }
 
+  async getDiddoc (did) {
+    if (!this.resolver) {
+      const lorResolver = LorenaDidResolver.getResolver()
+      this.resolver = new Resolver(lorResolver, true)
+    }
+    const diddoc = await this.resolver.resolve(did)
+    return diddoc
+  }
+
+  async getMatrixUserIDForDID (did) {
+    const diddoc = await this.getDiddoc(did)
+    const matrixUserID = diddoc.service[0].serviceEndpoint
+    return matrixUserID
+  }
+
+  async getPublicKeyForDID (did) {
+    const diddoc = await this.getDiddoc(did)
+    const publicKey = diddoc.authentication[0].publicKey
+    return publicKey
+  }
+
   /**
    * Open Connection with another user.
    *
    * @param {string} did DID
-   * @param {string} matrixUrl Matrix user ID/Url
+   * @param {string} matrixUserID Matrix user ID in format @username:home.server.xxx
    * @returns {Promise} Room ID created, or false
    */
-  async createConnection (did, matrixUrl) {
-    if (matrixUrl === undefined) {
-      const lorResolver = LorenaDidResolver.getResolver()
-      const resolver = new Resolver(lorResolver)
-      const diddoc = await resolver.resolve(did)
-      matrixUrl = diddoc.service[0].serviceEndpoint
+  async createConnection (did, matrixUserID) {
+    if (matrixUserID === undefined) {
+      matrixUserID = await this.getMatrixUserIDForDID(did)
     }
 
     const link = {
@@ -412,12 +358,12 @@ export default class Lorena extends EventEmitter {
       roomId: '',
       roomName: await this.zenroom.random(12),
       keyPair: false,
-      matrixUser: matrixUrl,
+      matrixUser: matrixUserID,
       status: 'invited',
       alias: ''
     }
     return new Promise((resolve, reject) => {
-      this.matrix.createConnection(link.roomName, matrixUrl)
+      this.matrix.createConnection(link.roomName, matrixUserID)
         .then((roomId) => {
           link.roomId = roomId
           this.wallet.add('links', link)
@@ -460,8 +406,7 @@ export default class Lorena extends EventEmitter {
               })
               .then(async (result) => {
                 if (result === false) throw (new Error('Timeout'))
-                const key = await this.blockchain.getActualDidKey(didValue(link.linkDid))
-                // debug(`memberOf: getActualDidKey result ${key}`)
+                const key = await this.getPublicKeyForDID(link.linkDid)
                 if (key === '') {
                   debug(`memberOf: Public key not found for ${link.did}`)
                   throw new Error(`Public key not found for ${link.did}`)

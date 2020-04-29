@@ -6,16 +6,6 @@ import { describe, it } from 'mocha'
 chai.use(require('chai-as-promised'))
 chai.use(require('chai-spies'))
 
-const lorenaKeys = [
-  'matrix',
-  'blockchain',
-  'opts',
-  '_events',
-  '_eventsCount',
-  '_maxListeners',
-  'wallet'
-]
-
 describe('Lorena API', function () {
   let lorena, wallet
   const password = 'test'
@@ -30,12 +20,10 @@ describe('Lorena API', function () {
 
   it('should construct a Lorena class', async () => {
     lorena = new Lorena(wallet)
-    expect(lorena).to.include.all.keys(lorenaKeys)
   })
 
   it('should construct a Lorena class with debug', async () => {
     lorena = new Lorena(wallet, { debug: true, silent: true })
-    expect(lorena).to.include.all.keys(lorenaKeys)
   })
 
   it('should not init wallet for an invalid network', async () => {
