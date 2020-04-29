@@ -157,9 +157,28 @@ export default class Lorena extends EventEmitter {
         this.matrix = new Matrix(this.wallet.info.matrixServer)
         await this.matrix.connect(this.wallet.info.matrixUser, this.wallet.info.matrixPass)
 
+        let info
+        // If we know the DID, get the info for the network of the did
+        if (this.wallet.info.did && this.wallet.info.did !== '') {
+          info = LorenaDidResolver.getInfoForDid(this.wallet.info.did)
+        // If we don't know the did, get it for the network
+        } else if (this.wallet.info.network) {
+          info = LorenaDidResolver.getInfoForNetwork(this.wallet.info.network)
+        // old wallets don't have a network, but they do have a blockchain
+        } else if (this.wallet.info.blockchainServer) {
+          // Take the network name from the first position in the hostname
+          const network = this.wallet.info.blockchainServer.split('//')[1].split('.')[0]
+          info = LorenaDidResolver.getInfoForNetwork(network)
+          this.wallet.info.network = network
+        // If we don't know the did or the network we're in trouble
+        } else {
+          debug('connect: unknown network type')
+          throw new Error('Connect: Unknown network type')
+        }
+
         const nodeProvider = {
           connection: {
-            url: this.wallet.info.blockchainServer,
+            url: info.blockchainEndpoint,
             timeout: 60000
           },
           trace: {
@@ -170,23 +189,23 @@ export default class Lorena extends EventEmitter {
           name: 'mxw',
           // Only necessary to create Tokens
           nonFungibleToken: {
-            provider: process.env.ProviderWalletMnemonic || 'dunno',
-            issuer: process.env.IssuerWalletMnemonic || 'dunno',
-            middleware: process.env.MiddlewareWalletMnemonic || 'dunno',
-            feeCollector: process.env.FeeCollectorWalletAddr || 'dunno'
+            provider: 'unknown',
+            issuer: 'unknown',
+            middleware: 'unknown',
+            feeCollector: 'unknown'
           }
         }
 
-        // Connect to SubstrateBlockchain.
-        switch (this.wallet.info.type) {
+        // Connect to Blockchain.
+        switch (info.type) {
           case 'maxonrow':
-            this.blockchain = new MaxonrowBlockchain(this.wallet.info.symbol, nodeProvider)
+            this.blockchain = new MaxonrowBlockchain(info.symbol, nodeProvider)
             break
           case 'substrate':
-            this.blockchain = new SubstrateBlockchain(this.wallet.info.blockchainServer)
+            this.blockchain = new SubstrateBlockchain(info.blockchainEndpoint)
             break
           default:
-            throw new Error(`Unsupported network ${this.context.info.network}`)
+            throw new Error(`Unsupported network type ${info.type}`)
         }
 
         await this.blockchain.connect()
@@ -479,11 +498,11 @@ export default class Lorena extends EventEmitter {
                 resolve(result.payload.msg)
               })
               .catch((e) => {
-                reject(new Error('member-of failed'))
+                reject(e)
               })
           }
         }).catch((e) => {
-          reject(new Error('member-of failed'))
+          reject(e)
         })
     })
   }
@@ -516,8 +535,8 @@ export default class Lorena extends EventEmitter {
               resolve(result.payload.msg)
             }
           })
-          .catch(() => {
-            reject(new Error('member-of-confirm failed'))
+          .catch((e) => {
+            reject(e)
           })
       }
     })
