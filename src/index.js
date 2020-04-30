@@ -555,15 +555,13 @@ export default class Lorena extends EventEmitter {
           this.resolver = new Resolver(lorResolver, true)
         }
 
-        // Load zenroom
-        const zenroom = new Zenroom(true)
         // get Publick Key -> Resolve from Blockchain & Check credential signature
         this.resolver.resolve(verified.issuer)
           .then((diddoc) => {
             verified.network = verified.issuer.split(':')[2]
             verified.pubKey = diddoc.authentication[0].publicKey
             verified.checkIssuer = (verified.issuer === diddoc.id)
-            return Credential.verifyCredential(zenroom, credential, verified.pubKey, verified.issuer)
+            return Credential.verifyCredential(this.zenroom, credential, verified.pubKey, verified.issuer)
           })
           .then((result) => {
             verified.checkCertificateSignature = result
@@ -576,7 +574,7 @@ export default class Lorena extends EventEmitter {
           .then((result) => {
             verified.credential = result.value
             // Verify Credencial -> The credential is signed by the Issuer
-            return Credential.verifyCredential(zenroom, verified.credential, verified.pubKey, verified.issuer)
+            return Credential.verifyCredential(this.zenroom, verified.credential, verified.pubKey, verified.issuer)
           })
           .then((result) => {
             verified.checkCredentialSignature = result
