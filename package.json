@@ -1,6 +1,6 @@
 {
   "name": "@lorena-ssi/lorena-sdk",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Lorena SDK",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "MIT",
@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/lorena-ssi/lorena-sdk#readme",
   "dependencies": {
-    "@lorena-ssi/credential-lib": "^1.1.1",
+    "@lorena-ssi/credential-lib": "^1.1.2",
     "@lorena-ssi/did-resolver": "^0.3.0",
     "@lorena-ssi/matrix-lib": "^1.0.13",
     "@lorena-ssi/wallet-lib": "^1.1.0",
