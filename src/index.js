@@ -1,5 +1,6 @@
 import Matrix from '@lorena-ssi/matrix-lib'
 import Zenroom from '@lorena-ssi/zenroom-lib'
+import IpfsClient from 'ipfs-http-client'
 import Credential from '@lorena-ssi/credential-lib'
 import LorenaDidResolver from '@lorena-ssi/did-resolver'
 import { Resolver } from 'did-resolver'
@@ -7,6 +8,7 @@ import { EventEmitter } from 'events'
 import log from 'debug'
 
 const debug = log('did:debug:sdk')
+const error = log('did:error:sdk')
 
 /**
  * Lorena SDK - Class
@@ -541,31 +543,58 @@ export default class Lorena extends EventEmitter {
   validateCertificate (json) {
     return new Promise((resolve) => {
       try {
-        // const verified = {}
+        const verified = {}
         const credential = JSON.parse(json)
-        console.log(credential)
+        verified.issuer = credential.issuer
 
-        // Get issuer
-        // verified.issuer = did
+        // Load resolver.
+        if (!this.resolver) {
+          const lorResolver = LorenaDidResolver.getResolver()
+          this.resolver = new Resolver(lorResolver, true)
+        }
+
+        // Load zenroom
+        const zenroom = new Zenroom(true)
 
         // get Publick Key -> Resolve from Blockchain
-        // verified.network =
-        // verified.pubKey =
-        // verified.checkIssuer =
+        this.resolver.resolve(verified.issuer)
+          .then((diddoc) => {
+          // verified.network =
+            verified.pubKey = diddoc.authentication[0].publicKey
+            verified.checkIssuer = verified.issuer
 
-        // Verify Signature -> The certificate is signed by the Issuer
-        // verified.checkCertificateSignature =
+            // Check credential signature
 
-        // IPFS DAG : Load Credential
-        // verified.credential =
+            return Credential.verifyCredential(zenroom, credential, verified.pubKey, verified.issuer)
+          })
+          .then((result) => {
+            verified.checkCertificateSignature = result
 
-        // Verify Credencial -> The credential is signed by the Issuer
-        // verified.checkCredentialSignature =
+            // IPFS DAG : Load Credential from IPFS
+            const ipfs = new IpfsClient({ host: 'labdev.ipfs.lorena.tech', port: '5001' })
+            const did = credential.credentialSubject.course.id
+            const cid = did.split(':')[3]
 
-        // const valid = verified.checkIssuer && verified.checkCertificateSignature && verified.checkCredentialSignature
-        const valid = false
-        resolve({ success: valid })
-      } catch (error) {
+            return ipfs.dag.get(cid)
+          })
+          .then((result) => {
+            verified.credential = result
+            console.log(verified.credential.value)
+            // Verify Credencial -> The credential is signed by the Issuer
+            return Credential.verifyCredential(zenroom, verified.credential.value, verified.pubKey, verified.issuer)
+          })
+          .then((result) => {
+            verified.checkCredentialSignature = result
+            // const valid = verified.checkIssuer && verified.checkCertificateSignature && verified.checkCredentialSignature
+            const valid = false
+            resolve({ success: valid })
+          })
+          .catch((e) => {
+            error(e)
+            resolve(false)
+          })
+      } catch (e) {
+        error(e)
         resolve(false)
       }
     })
