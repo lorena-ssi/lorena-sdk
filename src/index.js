@@ -543,9 +543,11 @@ export default class Lorena extends EventEmitter {
   validateCertificate (json) {
     return new Promise((resolve) => {
       try {
-        const verified = {}
         const credential = JSON.parse(json)
-        verified.issuer = credential.issuer
+        const verified = {
+          certificate: credential,
+          issuer: credential.issuer
+        }
 
         // Load resolver.
         if (!this.resolver) {
@@ -555,39 +557,31 @@ export default class Lorena extends EventEmitter {
 
         // Load zenroom
         const zenroom = new Zenroom(true)
-
-        // get Publick Key -> Resolve from Blockchain
+        // get Publick Key -> Resolve from Blockchain & Check credential signature
         this.resolver.resolve(verified.issuer)
           .then((diddoc) => {
-          // verified.network =
+            verified.network = verified.issuer.split(':')[2]
             verified.pubKey = diddoc.authentication[0].publicKey
-            verified.checkIssuer = verified.issuer
-
-            // Check credential signature
-
+            verified.checkIssuer = (verified.issuer === diddoc.id)
             return Credential.verifyCredential(zenroom, credential, verified.pubKey, verified.issuer)
           })
           .then((result) => {
             verified.checkCertificateSignature = result
-
             // IPFS DAG : Load Credential from IPFS
             const ipfs = new IpfsClient({ host: 'labdev.ipfs.lorena.tech', port: '5001' })
             const did = credential.credentialSubject.course.id
             const cid = did.split(':')[3]
-
             return ipfs.dag.get(cid)
           })
           .then((result) => {
-            verified.credential = result
-            console.log(verified.credential.value)
+            verified.credential = result.value
             // Verify Credencial -> The credential is signed by the Issuer
-            return Credential.verifyCredential(zenroom, verified.credential.value, verified.pubKey, verified.issuer)
+            return Credential.verifyCredential(zenroom, verified.credential, verified.pubKey, verified.issuer)
           })
           .then((result) => {
             verified.checkCredentialSignature = result
-            // const valid = verified.checkIssuer && verified.checkCertificateSignature && verified.checkCredentialSignature
-            const valid = false
-            resolve({ success: valid })
+            const valid = verified.checkIssuer && verified.checkCertificateSignature && verified.checkCredentialSignature
+            resolve({ success: valid, verified })
           })
           .catch((e) => {
             error(e)
