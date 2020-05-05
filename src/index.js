@@ -347,9 +347,10 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} did DID
    * @param {string} matrixUserID Matrix user ID in format @username:home.server.xxx
+   * @param {object} options Object with other options like `alias`
    * @returns {Promise} Room ID created, or false
    */
-  async createConnection (did, matrixUserID) {
+  async createConnection (did, matrixUserID, options = {}) {
     if (matrixUserID === undefined) {
       matrixUserID = await this.getMatrixUserIDForDID(did)
     }
@@ -362,7 +363,8 @@ export default class Lorena extends EventEmitter {
       keyPair: false,
       matrixUser: matrixUserID,
       status: 'invited',
-      alias: ''
+      alias: '',
+      ...options
     }
     return new Promise((resolve, reject) => {
       this.matrix.createConnection(link.roomName, matrixUserID)
