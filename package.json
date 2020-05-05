@@ -1,6 +1,6 @@
 {
   "name": "@lorena-ssi/lorena-sdk",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Lorena SDK",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "MIT",
@@ -26,8 +26,8 @@
     "@lorena-ssi/credential-lib": "^1.1.2",
     "@lorena-ssi/did-resolver": "^0.3.0",
     "@lorena-ssi/matrix-lib": "^1.0.13",
-    "@lorena-ssi/wallet-lib": "1.1.2",
-    "@lorena-ssi/zenroom-lib": "1.5.2",
+    "@lorena-ssi/wallet-lib": "1.1.3",
+    "@lorena-ssi/zenroom-lib": "1.5.3",
     "debug": "^4.1.1",
     "did-resolver": "^1.1.0",
     "esm": "^3.2.25",
