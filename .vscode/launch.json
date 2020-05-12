@@ -16,6 +16,7 @@
                 "bdd",
                 "--timeout",
                 "999999",
+                "--bail",
                 "--colors",
                 "${workspaceFolder}/test"
             ],

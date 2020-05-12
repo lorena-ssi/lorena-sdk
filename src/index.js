@@ -169,6 +169,7 @@ export default class Lorena extends EventEmitter {
   disconnect () {
     this.emit('disconnecting')
     this.disconnecting = true
+    LorenaDidResolver.disconnectAll()
   }
 
   /**
@@ -320,21 +321,59 @@ export default class Lorena extends EventEmitter {
     return this.oneMsg(`message:${recipe}`)
   }
 
-  async getDiddoc (did) {
-    if (!this.resolver) {
-      const lorResolver = LorenaDidResolver.getResolver()
-      this.resolver = new Resolver(lorResolver, true)
+  /**
+   * Get the DID resolver for the lor namespace, caching as necessary
+   *
+   * @returns {object} resolver
+   */
+  getLorResolver () {
+    if (!this.lorResolver) {
+      this.lorResolver = LorenaDidResolver.getResolver()
     }
-    const diddoc = await this.resolver.resolve(did)
+    return this.lorResolver
+  }
+
+  /**
+   * Get the general DID resolver for all namespaces, caching as necessary
+   *
+   * @returns {object} resolver
+   */
+  getResolver () {
+    if (!this.resolver) {
+      this.resolver = new Resolver(this.getLorResolver(), true)
+    }
+    return this.resolver
+  }
+
+  /**
+   * Get the specified DID document using the DID resolver
+   *
+   * @param {string} did to fetch
+   * @returns {object} diddoc
+   */
+  async getDiddoc (did) {
+    const diddoc = await this.getResolver().resolve(did)
     return diddoc
   }
 
+  /**
+   * Get the matrix User ID for the specified DID
+   *
+   * @param {string} did to fetch
+   * @returns {string} matrixUserID
+   */
   async getMatrixUserIDForDID (did) {
     const diddoc = await this.getDiddoc(did)
     const matrixUserID = diddoc.service[0].serviceEndpoint
     return matrixUserID
   }
 
+  /**
+   * Get the public key for the specified DID
+   *
+   * @param {string} did to fetch
+   * @returns {string} public key
+   */
   async getPublicKeyForDID (did) {
     const diddoc = await this.getDiddoc(did)
     const publicKey = diddoc.authentication[0].publicKey
@@ -541,7 +580,25 @@ export default class Lorena extends EventEmitter {
     })
   }
 
+  /**
+   * Verify a credential (deprecated: use `verifyCredential()`)
+   *
+   * @param {*} json of credential to verify
+   * @returns {Promise} of success (JSON) or failure (false)
+   */
+  /* istanbul ignore next */
   validateCertificate (json) {
+    debug('validateCertificate() deprecated: use verifyCredential()')
+    return this.verifyCredential(json)
+  }
+
+  /**
+   * Verify a credential
+   *
+   * @param {*} json of credential to verify
+   * @returns {Promise} of success (JSON) or failure (false)
+   */
+  verifyCredential (json) {
     return new Promise((resolve) => {
       try {
         const credential = JSON.parse(json)
@@ -550,14 +607,8 @@ export default class Lorena extends EventEmitter {
           issuer: credential.issuer
         }
 
-        // Load resolver.
-        if (!this.resolver) {
-          const lorResolver = LorenaDidResolver.getResolver()
-          this.resolver = new Resolver(lorResolver, true)
-        }
-
-        // get Publick Key -> Resolve from Blockchain & Check credential signature
-        this.resolver.resolve(verified.issuer)
+        // get Public Key -> Resolve from Blockchain & Check credential signature
+        this.getResolver().resolve(verified.issuer)
           .then((diddoc) => {
             verified.network = verified.issuer.split(':')[2]
             verified.pubKey = diddoc.authentication[0].publicKey
@@ -567,14 +618,14 @@ export default class Lorena extends EventEmitter {
           .then((result) => {
             verified.checkCertificateSignature = result
             // IPFS DAG : Load Credential from IPFS
-            const ipfs = new IpfsClient({ host: 'labdev.ipfs.lorena.tech', port: '5001' })
+            const ipfs = new IpfsClient(LorenaDidResolver.getInfoForNetwork(verified.network).ipfsEndpoint)
             const did = credential.credentialSubject.course.id
             const cid = did.split(':')[3]
             return ipfs.dag.get(cid)
           })
           .then((result) => {
             verified.credential = result.value
-            // Verify Credencial -> The credential is signed by the Issuer
+            // Verify Credential -> The credential is signed by the Issuer
             return Credential.verifyCredential(this.zenroom, verified.credential, verified.pubKey, verified.issuer)
           })
           .then((result) => {
