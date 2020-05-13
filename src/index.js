@@ -587,7 +587,7 @@ export default class Lorena extends EventEmitter {
    * @returns {Promise} of success (JSON) or failure (false)
    */
   /* istanbul ignore next */
-  validateCertificate (json) {
+  async validateCertificate (json) {
     debug('validateCertificate() deprecated: use verifyCredential()')
     return this.verifyCredential(json)
   }
@@ -598,7 +598,7 @@ export default class Lorena extends EventEmitter {
    * @param {*} json of credential to verify
    * @returns {Promise} of success (JSON) or failure (false)
    */
-  verifyCredential (json) {
+  async verifyCredential (json) {
     return new Promise((resolve) => {
       try {
         const credential = JSON.parse(json)
