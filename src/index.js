@@ -130,8 +130,18 @@ export default class Lorena extends EventEmitter {
     })
   }
 
-  getLink (linkId) {
-    return this.wallet.get('links', { linkId })
+  getLink (anyId) {
+    const UUIDv4 = '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i'
+    const ROOMID = '/^![az-AZ]+:[az-AZ]+.[az-AZ]+$/'
+
+    // It is a matrix room ID
+    if (ROOMID.test(anyId)) {
+      return this.wallet.get('links', { roomId: anyId })
+    } else if (UUIDv4.test(anyId)) { // it is a linkID (unique number)
+      return anyId
+    } else {
+      throw new Error('Unsupported ID to getLink')
+    }
   }
 
   /**
