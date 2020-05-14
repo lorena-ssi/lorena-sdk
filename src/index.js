@@ -130,9 +130,12 @@ export default class Lorena extends EventEmitter {
     })
   }
 
-  getLink (anyId) {
-    const UUIDv4 = '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i'
-    const ROOMID = '/^![az-AZ]+:[az-AZ]+.[az-AZ]+$/'
+  /*
+  *  an ID (roomId or LinkId) and returns the corresponding Link ID
+  */
+  getLinkId (anyId) {
+    const UUIDv4 = new RegExp('^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$')
+    const ROOMID = new RegExp('^![a-zA-Z]+:[a-zA-Z]+.[a-zA-Z]+$')
 
     // It is a matrix room ID
     if (ROOMID.test(anyId)) {
@@ -320,15 +323,17 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} recipe name
    * @param {*} payload to send with recipe
-   * @param {string} linkId Connection to use
+   * @param {string} AnyId RoomId/LinkId Connection to use
    * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
    * @returns {Promise} of message returned
    */
-  async callRecipe (recipe, payload = {}, linkId, threadId = undefined) {
+  async callRecipe (recipe, payload = {}, AnyId, threadId = undefined) {
     // use the threadId if provided, otherwise use the common one
     if (threadId === undefined || threadId === 0) {
       threadId = this.threadId++
     }
+
+    const linkId = this.getLinkId(AnyId)
     await this.sendAction(recipe, 0, recipe, threadId, payload, linkId)
     return this.oneMsg(`message:${recipe}`)
   }
