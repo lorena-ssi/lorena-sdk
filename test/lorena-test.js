@@ -26,6 +26,36 @@ describe('Lorena SDK', function () {
     lorena = new Lorena(wallet, { debug: true, silent: true })
   })
 
+  it('getLinkId passing a RoomID', () => {
+    const roomId = '!eXOzHMhPzOcZyBOogu:matrix.org'
+    const result = lorena.getLinkId(roomId)
+    expect(result).to.be.false
+  })
+
+  it('getLinkId passing a LinkID', () => {
+    const linkId = '123e4567-e89b-12d3-a456-426614174000'
+    const result = lorena.getLinkId(linkId)
+    expect(result).to.equal(linkId)
+  })
+
+  it('getLinkId passing an invalid format ID', () => {
+    const invalidId = '!^&***badjba'
+    try {
+      lorena.getLinkId(invalidId)
+    } catch (error) {
+      expect(error.message).to.equal('Unsupported ID to getLink')
+    }
+  })
+
+  it('getLinkId passing an undefined', () => {
+    const undefinedId = undefined
+    try {
+      lorena.getLinkId(undefinedId)
+    } catch (error) {
+      expect(error.message).to.equal('Unsupported ID to getLink')
+    }
+  })
+
   it('should not init wallet for an invalid network', async () => {
     await expect(lorena.initWallet('xxx')).to.be.rejectedWith(Error)
   })
