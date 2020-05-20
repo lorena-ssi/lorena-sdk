@@ -54,12 +54,6 @@ describe('Lorena SDK', function () {
     lorena.lock(password)
   })
 
-  it('should have these private methods', () => {
-    expect(typeof lorena.processQueue).to.equal('function')
-    expect(typeof lorena.loop).to.equal('function')
-    expect(typeof lorena.oneMsg).to.equal('function')
-  })
-
   it('should close connections', () => {
     lorena.disconnect()
   })
