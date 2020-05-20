@@ -152,8 +152,8 @@ export default class Lorena extends EventEmitter {
         this.ready = true
         this.processQueue()
         this.emit('ready')
-
-        this.loop()
+        this.once('receiveMessages', this.receiveMessages)
+        this.emit('receiveMessages')
         return true
       } catch (error) {
         debug('%O', error)
@@ -175,49 +175,71 @@ export default class Lorena extends EventEmitter {
   /**
    * Loop through received messages.
    */
-  async loop () {
-    let parsedElement
-    while (!this.disconnecting) {
-      const events = await this.getMessages()
-      this.processQueue()
-      events.forEach(async (element) => {
-        try {
-          switch (element.type) {
-            case 'contact-incoming':
-              // add(collection, value)
-              this.wallet.add('links', {
-                roomId: element.roomId,
-                alias: '',
-                did: '',
-                matrixUser: element.sender,
-                status: 'incoming'
-              })
-              await this.matrix.acceptConnection(element.roomId)
-              this.emit('contact-incoming', element.sender)
-              this.emit('change')
-              break
-            case 'contact-add':
-              // update(collection, where, value) value can be partial
-              this.wallet.update('links', { roomId: element.roomId }, {
-                status: 'connected'
-              })
-              // await this.matrix.acceptConnection(element.roomId)
-              this.emit('link-added', element.sender)
-              this.emit('change')
-              break
-            default:
-              parsedElement = JSON.parse(element.payload.body)
-              parsedElement.roomId = element.roomId
-              this.emit(`message:${parsedElement.recipe}`, parsedElement)
-              this.emit('message', parsedElement)
-              break
-          }
-        } catch (error) {
-          debug('%O', error)
-          this.emit('warning', 'element unknown')
-        }
-      })
+  async receiveMessages () {
+    if (this.disconnecting) {
+      return
     }
+    this.once('receiveMessages', this.receiveMessages)
+    let parsedElement
+    const events = await this.getMessages()
+    this.processQueue()
+    for await (const element of events) {
+      try {
+        switch (element.type) {
+          case 'contact-incoming':
+            // add(collection, value)
+            this.wallet.add('links', {
+              roomId: element.roomId,
+              alias: '',
+              did: '',
+              matrixUser: element.sender,
+              status: 'incoming'
+            })
+            await this.matrix.acceptConnection(element.roomId)
+            this.emit('contact-incoming', element.sender)
+            this.emit('change')
+            break
+          case 'contact-add':
+            // update(collection, where, value) value can be partial
+            this.wallet.update('links', { roomId: element.roomId }, {
+              status: 'connected'
+            })
+            // await this.matrix.acceptConnection(element.roomId)
+            this.emit('link-added', element.sender)
+            this.emit('change')
+            break
+          default:
+            parsedElement = JSON.parse(element.payload.body)
+            parsedElement.roomId = element.roomId
+            this.emit(`message:${parsedElement.recipe}`, parsedElement)
+            this.emit('message', parsedElement)
+            if (parsedElement.recipe === 'member-notify') {
+              this.handleMemberNotify(parsedElement)
+            }
+            break
+        }
+      } catch (error) {
+        debug('%O', error)
+        this.emit('warning', 'element unknown')
+      }
+    }
+    if (!this.disconnecting) {
+      this.emit('receiveMessages')
+    }
+  }
+
+  /**
+   * handle member-update-notify message
+   *
+   * @param {*} element event to process
+   */
+  async handleMemberNotify (element) {
+    debug('handleMemberNotify: ', element)
+    console.log(element)
+    console.log(this.wallet.data.credentials)
+    // const where = { 'credentialSubject["@type"]': element.payload.credential.issuer }
+    // this.wallet.update('credentials', where, element.payload.credential)
+    this.emit('change')
   }
 
   /**
