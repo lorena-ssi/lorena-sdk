@@ -101,6 +101,17 @@ export default class Lorena extends EventEmitter {
     if (result) {
       this.emit('unlocked', password)
     }
+
+    // Upgrade Wallet if it's necessary
+    const pjson = require('../package.json')
+    if (!this.wallet.info.sdkVersion || this.wallet.info.sdkVersion === undefined || this.wallet.info.sdkVersion === '') {
+      this.wallet.data.links.forEach(element => {
+        console.log('Upgrading legacy wallet to SDK Version: ', pjson.version)
+        this.wallet.info.version = pjson.version
+        element.linkId = uuid()
+      })
+    }
+
     return result
   }
 
