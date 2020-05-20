@@ -8,7 +8,6 @@ import { EventEmitter } from 'events'
 import log from 'debug'
 
 const debug = log('did:debug:sdk')
-const error = log('did:error:sdk')
 
 /**
  * Lorena SDK - Class
@@ -39,6 +38,7 @@ export default class Lorena extends EventEmitter {
    * First time. Init a wallet.
    *
    * @param {string} network Network the wallet is talking to.
+   * @returns {Promise} of initialized wallet
    */
   async initWallet (network) {
     return new Promise((resolve, reject) => {
@@ -283,6 +283,7 @@ export default class Lorena extends EventEmitter {
    * @param {number} threadId Local recipe Id
    * @param {object} payload Information to send
    * @param {string} roomId Contact to send recipe to
+   * @returns {number} recipeId
    */
   async sendAction (recipe, recipeId, threadRef, threadId, payload, roomId = false) {
     const action = {
@@ -502,6 +503,7 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} roomId Contact Identifier
    * @param {string} secretCode secret Code
+   * @returns {Promise} of success / error message
    */
   async memberOfConfirm (roomId, secretCode) {
     return new Promise((resolve, reject) => {
@@ -560,6 +562,7 @@ export default class Lorena extends EventEmitter {
    * Delete a link and leave the room for that link.
    *
    * @param {string} roomId Contact to be removed
+   * @returns {Promise} of boolean success/failure
    */
   async deleteLink (roomId) {
     return new Promise((resolve) => {
@@ -610,6 +613,9 @@ export default class Lorena extends EventEmitter {
         // get Public Key -> Resolve from Blockchain & Check credential signature
         this.getResolver().resolve(verified.issuer)
           .then((diddoc) => {
+            if (!diddoc) {
+              throw new Error(`No DID Document for ${verified.issuer}`)
+            }
             verified.network = verified.issuer.split(':')[2]
             verified.pubKey = diddoc.authentication[0].publicKey
             verified.checkIssuer = (verified.issuer === diddoc.id)
@@ -634,11 +640,11 @@ export default class Lorena extends EventEmitter {
             resolve({ success: valid, verified })
           })
           .catch((e) => {
-            error(e)
+            debug(e)
             resolve(false)
           })
       } catch (e) {
-        error(e)
+        debug(e)
         resolve(false)
       }
     })
