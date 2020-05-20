@@ -8,7 +8,6 @@ import { EventEmitter } from 'events'
 import log from 'debug'
 
 const debug = log('did:debug:sdk')
-const error = log('did:error:sdk')
 
 /**
  * Lorena SDK - Class
@@ -614,6 +613,9 @@ export default class Lorena extends EventEmitter {
         // get Public Key -> Resolve from Blockchain & Check credential signature
         this.getResolver().resolve(verified.issuer)
           .then((diddoc) => {
+            if (!diddoc) {
+              throw new Error(`No DID Document for ${verified.issuer}`)
+            }
             verified.network = verified.issuer.split(':')[2]
             verified.pubKey = diddoc.authentication[0].publicKey
             verified.checkIssuer = (verified.issuer === diddoc.id)
@@ -638,11 +640,11 @@ export default class Lorena extends EventEmitter {
             resolve({ success: valid, verified })
           })
           .catch((e) => {
-            error(e)
+            debug(e)
             resolve(false)
           })
       } catch (e) {
-        error(e)
+        debug(e)
         resolve(false)
       }
     })
