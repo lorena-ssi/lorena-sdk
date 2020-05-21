@@ -9,7 +9,6 @@ import log from 'debug'
 import uuid from 'uuid/v4'
 
 const debug = log('did:debug:sdk')
-const error = log('did:error:sdk')
 
 /**
  * Lorena SDK - Class
@@ -40,6 +39,7 @@ export default class Lorena extends EventEmitter {
    * First time. Init a wallet.
    *
    * @param {string} network Network the wallet is talking to.
+   * @returns {Promise} of initialized wallet
    */
   async initWallet (network) {
     return new Promise((resolve, reject) => {
@@ -531,6 +531,7 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} linkId Connection Identifier
    * @param {string} secretCode secret Code
+   * @returns {Promise} of success / error message
    */
   async memberOfConfirm (linkId, secretCode) {
     return new Promise((resolve, reject) => {
@@ -635,6 +636,9 @@ export default class Lorena extends EventEmitter {
         // get Public Key -> Resolve from Blockchain & Check credential signature
         this.getResolver().resolve(verified.issuer)
           .then((diddoc) => {
+            if (!diddoc) {
+              throw new Error(`No DID Document for ${verified.issuer}`)
+            }
             verified.network = verified.issuer.split(':')[2]
             verified.pubKey = diddoc.authentication[0].publicKey
             verified.checkIssuer = (verified.issuer === diddoc.id)
@@ -659,11 +663,11 @@ export default class Lorena extends EventEmitter {
             resolve({ success: valid, verified })
           })
           .catch((e) => {
-            error(e)
+            debug(e)
             resolve(false)
           })
       } catch (e) {
-        error(e)
+        debug(e)
         resolve(false)
       }
     })
