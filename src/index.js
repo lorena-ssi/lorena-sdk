@@ -6,6 +6,7 @@ import LorenaDidResolver from '@lorena-ssi/did-resolver'
 import { Resolver } from 'did-resolver'
 import { EventEmitter } from 'events'
 import log from 'debug'
+import uuid from 'uuid/v4'
 
 const debug = log('did:debug:sdk')
 
@@ -100,6 +101,17 @@ export default class Lorena extends EventEmitter {
     if (result) {
       this.emit('unlocked', password)
     }
+
+    // Upgrade Wallet if it's necessary
+    const pjson = require('../package.json')
+    if (!this.wallet.info.sdkVersion || this.wallet.info.sdkVersion === undefined || this.wallet.info.sdkVersion === '') {
+      this.wallet.data.links.forEach(element => {
+        console.log('Upgrading legacy wallet to SDK Version: ', pjson.version)
+        this.wallet.info.version = pjson.version
+        element.linkId = uuid()
+      })
+    }
+
     return result
   }
 
@@ -129,8 +141,21 @@ export default class Lorena extends EventEmitter {
     })
   }
 
-  getContact (roomId) {
-    return this.wallet.get('links', { roomId: roomId })
+  /*
+  *  an ID (roomId or LinkId) and returns the corresponding Link ID
+  */
+  getLinkId (anyId) {
+    const UUIDv4 = new RegExp('^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$')
+    const ROOMID = new RegExp('^![a-zA-Z]+:[a-zA-Z]+.[a-zA-Z]+$')
+
+    // It is a matrix room ID
+    if (ROOMID.test(anyId)) {
+      return this.wallet.get('links', { roomId: anyId })
+    } else if (UUIDv4.test(anyId)) { // it is a linkID (unique number)
+      return anyId
+    } else {
+      throw new Error('Unsupported ID to getLink')
+    }
   }
 
   /**
@@ -189,6 +214,7 @@ export default class Lorena extends EventEmitter {
           case 'contact-incoming':
             // add(collection, value)
             this.wallet.add('links', {
+              linkId: element.linkId,
               roomId: element.roomId,
               alias: '',
               did: '',
@@ -201,7 +227,7 @@ export default class Lorena extends EventEmitter {
             break
           case 'contact-add':
             // update(collection, where, value) value can be partial
-            this.wallet.update('links', { roomId: element.roomId }, {
+            this.wallet.update('links', { linkId: element.linkId }, {
               status: 'connected'
             })
             // await this.matrix.acceptConnection(element.roomId)
@@ -210,7 +236,7 @@ export default class Lorena extends EventEmitter {
             break
           default:
             parsedElement = JSON.parse(element.payload.body)
-            parsedElement.roomId = element.roomId
+            parsedElement.linkId = element.linkId
             this.emit(`message:${parsedElement.recipe}`, parsedElement)
             this.emit('message', parsedElement)
             if (parsedElement.recipe === 'member-notify') {
@@ -304,10 +330,9 @@ export default class Lorena extends EventEmitter {
    * @param {string} threadRef Local Recipe name
    * @param {number} threadId Local recipe Id
    * @param {object} payload Information to send
-   * @param {string} roomId Contact to send recipe to
-   * @returns {number} recipeId
+   * @param {string} linkId Connection through which to send recipe
    */
-  async sendAction (recipe, recipeId, threadRef, threadId, payload, roomId = false) {
+  async sendAction (recipe, recipeId, threadRef, threadId, payload, linkId) {
     const action = {
       recipe,
       recipeId,
@@ -318,8 +343,8 @@ export default class Lorena extends EventEmitter {
     if (!this.processing && this.ready) { // execute just in time
       this.processing = true
       const sendPayload = JSON.stringify(action)
-      const sendTo = (roomId === false) ? this.wallet.info.roomId : roomId
-      await this.matrix.sendMessage(sendTo, 'm.action', sendPayload)
+      const link = this.wallet.get('links', { linkId })
+      await this.matrix.sendMessage(link.roomId, 'm.action', sendPayload)
     } else {
       this.queue.push(action)
     }
@@ -331,16 +356,18 @@ export default class Lorena extends EventEmitter {
    *
    * @param {string} recipe name
    * @param {*} payload to send with recipe
-   * @param {string} roomId room ID
+   * @param {string} AnyId RoomId/LinkId Connection to use
    * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
    * @returns {Promise} of message returned
    */
-  async callRecipe (recipe, payload = {}, roomId, threadId = undefined) {
+  async callRecipe (recipe, payload = {}, AnyId, threadId = undefined) {
     // use the threadId if provided, otherwise use the common one
     if (threadId === undefined || threadId === 0) {
       threadId = this.threadId++
     }
-    await this.sendAction(recipe, 0, recipe, threadId, payload, roomId)
+
+    const linkId = this.getLinkId(AnyId)
+    await this.sendAction(recipe, 0, recipe, threadId, payload, linkId)
     return this.oneMsg(`message:${recipe}`)
   }
 
@@ -409,7 +436,7 @@ export default class Lorena extends EventEmitter {
    * @param {string} did DID
    * @param {string} matrixUserID Matrix user ID in format @username:home.server.xxx
    * @param {object} options Object with other options like `alias`
-   * @returns {Promise} Room ID created, or false
+   * @returns {Promise} linkId created, or false
    */
   async createConnection (did, matrixUserID, options = {}) {
     if (matrixUserID === undefined) {
@@ -417,6 +444,7 @@ export default class Lorena extends EventEmitter {
     }
 
     const link = {
+      linkId: uuid(),
       did: false,
       linkDid: did,
       roomId: '',
@@ -433,7 +461,7 @@ export default class Lorena extends EventEmitter {
           link.roomId = roomId
           this.wallet.add('links', link)
           this.emit('change')
-          resolve(roomId)
+          resolve(link.linkId)
         })
         .catch((e) => {
           debug(`createConnection ${e}`)
@@ -445,27 +473,27 @@ export default class Lorena extends EventEmitter {
   /**
    * memberOf
    *
-   * @param {string} roomId Contact Identifier
+   * @param {string} linkId Connection to use
    * @param {string} extra Extra information
    * @param {string} roleName Name fo the role we ask for
    * @returns {Promise} Result of calling recipe member-of
    */
-  async memberOf (roomId, extra, roleName) {
+  async memberOf (linkId, extra, roleName) {
     return new Promise((resolve, reject) => {
       let challenge = ''
       let link = {}
       this.zenroom.random(32)
         .then((result) => {
           challenge = result
-          return this.wallet.get('links', { roomId: roomId })
+          return this.wallet.get('links', { linkId })
         })
         .then((result) => {
           if (!result) {
-            debug(`did:debug:sdk:memberOf: ${roomId} not found`)
-            throw new Error(`memberOf: Room ${roomId} not found`)
+            debug(`did:debug:sdk:memberOf: ${linkId} not found`)
+            throw new Error(`memberOf: ${linkId} not found`)
           } else {
             link = result
-            this.sendAction('member-of', 0, 'member-of', 1, { challenge }, roomId)
+            this.sendAction('member-of', 0, 'member-of', 1, { challenge }, linkId)
               .then(() => {
                 return this.oneMsg('message:member-of')
               })
@@ -492,7 +520,7 @@ export default class Lorena extends EventEmitter {
                     member: signedCredential,
                     publicKey: link.keyPair[link.did].keypair.public_key
                   }
-                  return this.sendAction('member-of', result.threadId, 'member-of', 1, payload, roomId)
+                  return this.sendAction('member-of', result.threadId, 'member-of', 1, payload, linkId)
                 } else {
                   debug(`memberOf: checkSignature result ${check}`)
                   throw new Error(`Signature did not match public key ${key}`)
@@ -502,7 +530,7 @@ export default class Lorena extends EventEmitter {
                 return this.oneMsg('message:member-of')
               })
               .then(async (result) => {
-                this.wallet.update('links', { roomId: roomId }, {
+                this.wallet.update('links', { linkId }, {
                   status: 'requested',
                   did: link.did,
                   keyPair: link.keyPair
@@ -523,25 +551,25 @@ export default class Lorena extends EventEmitter {
   /**
    * memberOfConfirm.
    *
-   * @param {string} roomId Contact Identifier
+   * @param {string} linkId Connection Identifier
    * @param {string} secretCode secret Code
    * @returns {Promise} of success / error message
    */
-  async memberOfConfirm (roomId, secretCode) {
+  async memberOfConfirm (linkId, secretCode) {
     return new Promise((resolve, reject) => {
-      const room = this.wallet.get('links', { roomId: roomId })
-      if (!room) {
-        debug(`memberOfConfirm: room ${roomId} is not in links`)
+      const link = this.wallet.get('links', { linkId })
+      if (!link) {
+        debug(`memberOfConfirm: ${linkId} is not in links`)
         resolve(false)
       } else {
-        this.sendAction('member-of-confirm', 0, 'member-of-confirm', 1, { secretCode }, roomId)
+        this.sendAction('member-of-confirm', 0, 'member-of-confirm', 1, { secretCode }, linkId)
           .then(() => {
             return this.oneMsg('message:member-of-confirm')
           })
           .then(async (result) => {
             if (result === false) throw (new Error('Timeout'))
             if (result.payload.msg === 'member verified') {
-              this.wallet.update('links', { roomId: roomId }, { status: 'verified' })
+              this.wallet.update('links', { linkId }, { status: 'verified' })
               this.wallet.add('credentials', result.payload.credential)
               this.emit('change')
               resolve(result.payload.msg)
@@ -559,12 +587,12 @@ export default class Lorena extends EventEmitter {
   /**
    * Ask to a link for a credential.
    *
-   * @param {string} roomId Contact identifier
+   * @param {string} linkId Connection identifier
    * @param {string} credentialType Credential we ask for.
    * @param {number=} threadId thread ID (if not provided use intrinsic thread ID management)
    * @returns {boolean} result
    */
-  async askCredential (roomId, credentialType, threadId = undefined) {
+  async askCredential (linkId, credentialType, threadId = undefined) {
     // use the threadId if provided, otherwise use the common one
     if (threadId === undefined) {
       threadId = this.threadId++
@@ -573,7 +601,7 @@ export default class Lorena extends EventEmitter {
       const payload = {
         credentialType: credentialType
       }
-      this.sendAction('credential-get', 0, 'credential-ask', threadId, payload, roomId)
+      this.sendAction('credential-get', 0, 'credential-ask', threadId, payload, linkId)
         .then(() => {
           resolve(true)
         })
@@ -583,20 +611,15 @@ export default class Lorena extends EventEmitter {
   /**
    * Delete a link and leave the room for that link.
    *
-   * @param {string} roomId Contact to be removed
-   * @returns {Promise} of boolean success/failure
+   * @param {string} linkId Connection to be removed
+   * @returns {Promise} of removing the link and leaving the room
    */
-  async deleteLink (roomId) {
+  async deleteLink (linkId) {
     return new Promise((resolve) => {
-      this.matrix.leaveRoom(roomId)
-        .then((roomId) => {
-          this.wallet.add('links', {
-            roomId,
-            alias: '',
-            did: '',
-            matrixUser: '',
-            status: 'invited'
-          })
+      const link = this.wallet.get('links', { linkId })
+      this.matrix.leaveRoom(link.roomId)
+        .then(() => {
+          this.wallet.remove('links', { linkId })
           this.emit('change')
           resolve(true)
         }).catch((_e) => {
