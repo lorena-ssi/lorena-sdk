@@ -235,8 +235,8 @@ export default class Lorena extends EventEmitter {
    */
   async handleMemberNotify (element) {
     debug('handleMemberNotify: ', element)
-    console.log(element)
-    console.log(this.wallet.data.credentials)
+    this.wallet.data.credentials[0] = element.payload.credential
+    // TODO: Update credential based on credential ID
     // const where = { 'credentialSubject["@type"]': element.payload.credential.issuer }
     // this.wallet.update('credentials', where, element.payload.credential)
     this.emit('change')
