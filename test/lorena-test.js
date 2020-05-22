@@ -71,7 +71,7 @@ describe('Lorena SDK', function () {
     // Load example wallet Json
     const walletObject = await importWallet('./test/exampleWallet.json')
     const username = Object.keys(walletObject)[0]
-    const zpassword = 'zeevee'
+    const zPassword = 'zeevee'
     const exampleWallet = new Wallet(username)
     await exampleWallet.write('info', walletObject[username].info)
     await exampleWallet.write('data', walletObject[username].data)
@@ -93,7 +93,7 @@ describe('Lorena SDK', function () {
     expect(mockLorena.wallet.data.links[0].linkId).not.be.ok
 
     // Unlock Wallet
-    await mockLorena.unlock(zpassword)
+    await mockLorena.unlock(zPassword)
     expect(mockLorena.wallet.data.links[0].linkId).to.be.a.guid()
     mockLorena.disconnect()
   })
