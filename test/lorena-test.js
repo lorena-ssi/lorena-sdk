@@ -71,7 +71,7 @@ describe('Lorena SDK', function () {
     // Load example wallet Json
     const walletObject = await importWallet('./test/exampleWallet.json')
     const username = Object.keys(walletObject)[0]
-    const zpassword = 'zeevee'
+    const zPassword = 'zeevee'
     const exampleWallet = new Wallet(username)
     await exampleWallet.write('info', walletObject[username].info)
     await exampleWallet.write('data', walletObject[username].data)
@@ -93,7 +93,7 @@ describe('Lorena SDK', function () {
     expect(mockLorena.wallet.data.links[0].linkId).not.be.ok
 
     // Unlock Wallet
-    await mockLorena.unlock(zpassword)
+    await mockLorena.unlock(zPassword)
     expect(mockLorena.wallet.data.links[0].linkId).to.be.a.guid()
     mockLorena.disconnect()
   })
@@ -126,19 +126,13 @@ describe('Lorena SDK', function () {
     lorena.lock(password)
   })
 
-  it('should have these private methods', () => {
-    expect(typeof lorena.processQueue).to.equal('function')
-    expect(typeof lorena.loop).to.equal('function')
-    expect(typeof lorena.oneMsg).to.equal('function')
-  })
-
   it('should close connections', () => {
     lorena.disconnect()
   })
 
-  xit('should verify a Credential', (done) => {
+  it('should verify a Credential', (done) => {
     const lorenaSessionless = new Lorena()
-    const json = '{"@context":["https://www.w3.org/2018/credentials/v1"],"type":["VerifiableCredential","Achievement"],"issuer":"did:lor:labtest:ZGtaUFRIaHlOQzEzUmpoSVlrdzJZbTkz","issuanceDate":"2020-04-30T04:17:18.037Z","credentialSubject":{"@type":"Achievement","id":"did:lor:labtest:bafyreiegi4p5fg65chx67gkppk2zcded7smfe6lgestf44wcqyiuxicriu;id:22","course":{"id":"did:lor:labtest:bafyreiegi4p5fg65chx67gkppk2zcded7smfe6lgestf44wcqyiuxicriu"},"agent":{"@type":"Person","id":"","name":"Alex Puig","email":"alex@caelumlabs.com"},"expirationDate":""},"proof":{"type":"Curve448-Goldilocks","proofPurpose":"assertionMethod","verificationMethod":"","signature":{"did:lor:labtest:ZGtaUFRIaHlOQzEzUmpoSVlrdzJZbTkz":{"draft":"dW5kZWZpbmVk","signature":{"r":"K1zKNIkSx87nZ7bj_JlrN8z2qgkvPUsHe25E3yZ1UU16ufH4H31MS52_leNlBoCdLmM4vUvCAaA","s":"Pcb-VF08gc7IymfxXWCgBwwPfcyMYLL-7pLrjwKuQF4p5gpfvQSCrOKk0QjolRSY3v6Wwtqwc4E"}}}}}'
+    const json = '{"@context":["https://www.w3.org/2018/credentials/v1"],"type":["VerifiableCredential","Achievement"],"issuer":"did:lor:labtest:TjFkVWNrbFFjMmRDUVhsYU9YWlZVbTA1","issuanceDate":"2020-05-21T14:59:00.690Z","credentialSubject":{"@type":"Achievement","id":"did:lor:labtest:bafyreicnpref2qytclwsopuxc2huuf4q2vxjryj2oavnckvv3orpqkuvvq;id:1","course":{"id":"did:lor:labtest:bafyreicnpref2qytclwsopuxc2huuf4q2vxjryj2oavnckvv3orpqkuvvq"},"agent":{"@type":"Person","id":"","name":"diego torres","email":"diego@caelumlabs.com"},"expirationDate":""},"proof":{"type":"Curve448-Goldilocks","proofPurpose":"assertionMethod","verificationMethod":"","signature":{"did:lor:labtest:TjFkVWNrbFFjMmRDUVhsYU9YWlZVbTA1":{"draft":"dW5kZWZpbmVk","signature":{"r":"ExOo2egwpPWgoqwgexjaRDnlgqoZS3Doy_HPZsBTuBd_hQOvjrNVZuUBdSz14KU8YxAp8Upx5fY","s":"BOJSSU25bO8MK4pOT-Lfh_CYQ0F72VF24mLWrqnn0ci_YXPm3_fyp9H8e2dAl4Eee04PK4mQ5Jg"}}}}}'
     lorenaSessionless.verifyCredential(json)
       .then((res) => {
         expect(typeof res).to.equal('object')
