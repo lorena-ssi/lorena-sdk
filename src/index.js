@@ -104,7 +104,7 @@ export default class Lorena extends EventEmitter {
 
     // Upgrade Wallet if it's necessary
     const packageJSON = require('../package.json')
-    if (!this.wallet.info.sdkVersion || this.wallet.info.sdkVersion === undefined || this.wallet.info.sdkVersion === '') {
+    if (!this.wallet.info.version || this.wallet.info.version === undefined || this.wallet.info.version === '') {
       console.log('Upgrading legacy wallet to SDK Version: ', packageJSON.version)
       this.wallet.data.links.forEach(element => {
         element.linkId = uuid()
