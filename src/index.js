@@ -147,11 +147,12 @@ export default class Lorena extends EventEmitter {
   */
   getLinkId (anyId) {
     const UUIDv4 = new RegExp('^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$')
-    const ROOMID = new RegExp('^![a-zA-Z]+:[a-zA-Z]+.[a-zA-Z]+$')
+    const ROOMID = new RegExp('^![a-zA-Z]+:[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+$')
 
     // It is a matrix room ID
     if (ROOMID.test(anyId)) {
-      return this.wallet.get('links', { roomId: anyId })
+      const link = this.wallet.get('links', { roomId: anyId })
+      return link.linkId
     } else if (UUIDv4.test(anyId)) { // it is a linkID (unique number)
       return anyId
     } else {

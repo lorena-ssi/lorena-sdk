@@ -38,9 +38,10 @@ describe('Lorena SDK', function () {
   })
 
   it('getLinkId passing a RoomID', () => {
-    const roomId = '!eXOzHMhPzOcZyBOogu:matrix.org'
+    const roomId = '!bXwVAPtFvrDcauxIna:labtest.matrix.lorena.tech'
     const result = lorena.getLinkId(roomId)
-    expect(result).to.be.false
+    expect(result).to.be.undefined
+    // this is success because wallet doesn't have this link and no throw
   })
 
   it('getLinkId passing a LinkID', () => {
