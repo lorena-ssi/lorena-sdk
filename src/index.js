@@ -309,6 +309,7 @@ export default class Lorena extends EventEmitter {
    * @param {number} threadId Local recipe Id
    * @param {object} payload Information to send
    * @param {string} linkId Connection through which to send recipe
+   * @returns {number} recipeId
    */
   async sendAction (recipe, recipeId, threadRef, threadId, payload, linkId) {
     const action = {
