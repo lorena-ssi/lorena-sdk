@@ -263,14 +263,16 @@ export default class Lorena extends EventEmitter {
    */
   async handleMemberNotify (element) {
     // If there's no credential then ignore the update
-    if (element.payload.credential === null) {
-      debug('handleMemberNotify null credential')
-      debug('handleMemberNotify: ', element)
+    if (!element.payload.credential) {
+      debug('handleMemberNotify has no credential')
+      debug('handleMemberNotify element: ', element)
       return
     }
 
     // If it's a memberOf credential it has a roleName, so update it in the wallet.
-    if (element.payload.credential.credentialSubject.member.roleName) {
+    if (element.payload.credential.credentialSubject &&
+       element.payload.credential.credentialSubject.member &&
+       element.payload.credential.credentialSubject.member.roleName) {
       this.wallet.data.credentials[0] = element.payload.credential
     } else {
       this.wallet.add('credentials', element.payload.credential)
