@@ -1,6 +1,6 @@
 {
   "name": "@lorena-ssi/lorena-sdk",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "Lorena SDK",
   "author": "Alex Puig <alex@caelumlabs.com>",
   "license": "MIT",
@@ -31,7 +31,7 @@
     "debug": "^4.1.1",
     "did-resolver": "^1.1.0",
     "esm": "^3.2.25",
-    "ipfs-http-client": "^44.1.1"
+    "ipfs-http-client": "^44.1.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
