@@ -131,9 +131,9 @@ describe('Lorena SDK', function () {
     lorena.disconnect()
   })
 
-  xit('should verify a Credential', (done) => {
+  it('should verify a Credential', (done) => {
     const lorenaSessionless = new Lorena()
-    const json = '{"@context":["https://www.w3.org/2018/credentials/v1"],"type":["VerifiableCredential","Achievement"],"issuer":"did:lor:labtest:TjFkVWNrbFFjMmRDUVhsYU9YWlZVbTA1","issuanceDate":"2020-05-21T14:59:00.690Z","credentialSubject":{"@type":"Achievement","id":"did:lor:labtest:bafyreicnpref2qytclwsopuxc2huuf4q2vxjryj2oavnckvv3orpqkuvvq;id:1","course":{"id":"did:lor:labtest:bafyreicnpref2qytclwsopuxc2huuf4q2vxjryj2oavnckvv3orpqkuvvq"},"agent":{"@type":"Person","id":"","name":"diego torres","email":"diego@caelumlabs.com"},"expirationDate":""},"proof":{"type":"Curve448-Goldilocks","proofPurpose":"assertionMethod","verificationMethod":"","signature":{"did:lor:labtest:TjFkVWNrbFFjMmRDUVhsYU9YWlZVbTA1":{"draft":"dW5kZWZpbmVk","signature":{"r":"ExOo2egwpPWgoqwgexjaRDnlgqoZS3Doy_HPZsBTuBd_hQOvjrNVZuUBdSz14KU8YxAp8Upx5fY","s":"BOJSSU25bO8MK4pOT-Lfh_CYQ0F72VF24mLWrqnn0ci_YXPm3_fyp9H8e2dAl4Eee04PK4mQ5Jg"}}}}}'
+    const json = '{"@context":["https://www.w3.org/2018/credentials/v1"],"type":["VerifiableCredential","Achievement"],"issuer":"did:lor:labtest:WTNaQ2QwMUljVzlmTmxVMWFGWnVZMWx2","issuanceDate":"2020-08-18T13:35:09.318Z","credentialSubject":{"@type":"Achievement","id":"did:lor:labtest:bafyreidutljjooc3fpxa3bj4eg7fb7czcbh2vrbwyt7kyqb2mtx55v43v4;id:31","issuer":"did:lor:labtest:WTNaQ2QwMUljVzlmTmxVMWFGWnVZMWx2","course":{"id":"did:lor:labtest:bafyreidutljjooc3fpxa3bj4eg7fb7czcbh2vrbwyt7kyqb2mtx55v43v4"},"description":"messi messi","expirationDate":null,"issuanceDate":null,"learningAchievement":{"title":"macu macu"},"title":"FCB Presi","url":"fcbarcelona.com","agent":{"@type":"Person","id":"","name":"Diego Torres López","email":"diego@caelumlabs.com"}},"proof":{"type":"Curve448-Goldilocks","proofPurpose":"assertionMethod","verificationMethod":"","signature":{"did:lor:labtest:WTNaQ2QwMUljVzlmTmxVMWFGWnVZMWx2":{"draft":"dW5kZWZpbmVk","signature":{"r":"G4QGZHXZ1Yc_oYX7DaScHduQmzbr70f4Ulqmscehsl2vMSu-B6AibwpN0Qfw0kL9WllnNTHlcmY","s":"LN93aeTW7fS1-lsKH8CHwSg0E9MVRYcvULbVQc8WuCqo19yE6HKGbTkAZ7nzrwy-h5cpIj-iVFw"}}}}}'
     lorenaSessionless.verifyCredential(json)
       .then((res) => {
         expect(typeof res).to.equal('object')
